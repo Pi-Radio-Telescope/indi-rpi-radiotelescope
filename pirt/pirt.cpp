@@ -614,6 +614,15 @@ bool PiRT::ISSnoopDevice(XMLEle* root)
     return INDI::Telescope::ISSnoopDevice(root);
 }
 
+bool PiRT::saveConfigItems(FILE *fp) {
+    // Save custom setting
+    IUSaveConfigNumber(fp, &MotorCurrentLimitNP);
+    IUSaveConfigNumber(fp, &MotorThresholdNP);
+    IUSaveConfigNumber(fp, &EncoderBitRateNP);
+    // Save base telescope config
+    return INDI::Telescope::saveConfigItems(fp);
+}
+
 bool PiRT::SetTrackMode(uint8_t /* mode */)
 {
     return false;
