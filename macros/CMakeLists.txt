@@ -23,4 +23,5 @@ rt_scan_equ
 rt_ads1115_measurement
 rt_mqtt_to_ratsche
 rt_ratsche_to_mqtt
+rt_mqtt.py
 DESTINATION bin)

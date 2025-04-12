@@ -10,6 +10,7 @@ indiserver.service
 ratsche.service
 rt_ratsche_to_mqtt.service
 rt_mqtt_to_ratsche.service
+rt_mqtt.service
 DESTINATION /usr/lib/systemd/system)
 
 install(CODE "execute_process(COMMAND systemctl daemon-reload)")
