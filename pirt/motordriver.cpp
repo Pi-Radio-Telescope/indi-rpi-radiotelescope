@@ -16,7 +16,7 @@
 namespace PiRaTe {
 
 constexpr std::chrono::milliseconds loop_delay { 10 };
-constexpr std::chrono::milliseconds ramp_time { 1000 };
+constexpr std::chrono::milliseconds ramp_time { 100 };
 constexpr std::size_t adc_measurement_rate_loop_cycles { 10 };
 constexpr double ramp_increment { static_cast<double>(loop_delay.count()) / ramp_time.count() };
 constexpr unsigned int HW_PWM1_PIN { 12 };
