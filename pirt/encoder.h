@@ -15,10 +15,6 @@
 
 #include "gpioif.h"
 
-//namespace {
-//	class GPIO;
-//}
-
 namespace PiRaTe {
 
 constexpr unsigned int SPI_BAUD_DEFAULT { 500000U };

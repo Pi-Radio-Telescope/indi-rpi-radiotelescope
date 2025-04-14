@@ -14,13 +14,14 @@
 
 #define DEFAULT_DEBUG_LEVEL 0
 
-//We define a class named i2cDevices to outsource the hardware dependent program parts. We want to
-//access components of integrated curcuits, like the ads1115 or other subdevices via i2c-bus.
-//The main aim here is, that the user does not have to be concerned about the c like low level operations
-//of I2C access
-// First, we define an abstract base class with all low-level i2c acess functions implemented.
-// For device specific implementations, classes can inherit this base class
-// virtual methods should be reimplemented in the child classes to make sense there, e.g. devicePresent()
+/**
+ * @brief I2C interface unix linux kernel character device access.
+ * This class provides general access to the linux kernel i2c device with all basic
+ * access functions.
+ * For device specific implementations, classes can inherit this base class. 
+ * Virtual methods should be reimplemented in the child class to make sense there,
+ * such as devicePresent().
+*/
 class i2cDevice {
 
 public:
@@ -48,23 +49,10 @@ public:
     static unsigned int getGlobalNrBytesRead() { return fGlobalNrBytesRead; }
     static unsigned int getGlobalNrBytesWritten() { return fGlobalNrBytesWritten; }
     static std::vector<i2cDevice*>& getGlobalDeviceList() { return fGlobalDeviceList; }
-    static i2cDevice* findDevice(uint8_t slaveAddress)
-    {
-        for (auto device : fGlobalDeviceList) {
-            if (device != nullptr && device->getAddress() == slaveAddress)
-                return device;
-        }
-        return nullptr;
-    }
+    static i2cDevice* findDevice(uint8_t slaveAddress);
     virtual bool devicePresent();
     uint8_t getStatus() const { return fMode; }
-    void lock(bool locked = true)
-    {
-        if (locked)
-            fMode |= MODE_LOCKED;
-        else
-            fMode &= ~MODE_LOCKED;
-    }
+    void lock(bool locked = true);
 
     double getLastTimeInterval() const { return fLastTimeInterval; }
 
@@ -74,37 +62,41 @@ public:
     void setTitle(const std::string& a_title) { fTitle = a_title; }
     const std::string& getTitle() const { return fTitle; }
 
-    // read nBytes bytes into buffer buf
-    // return value:
-    // 	the number of bytes actually read if successful
-    //	-1 on error
+    /** @brief Read multiple bytes from device into buffer.
+     * @param buf Buffer to store the data read from the device
+     * @param nBytes Number of bytes to be read
+     * @return Number of bytes actually read during the operation (<=0 on failure)
+     */
     int read(uint8_t* buf, int nBytes);
 
-    // write nBytes bytes from buffer buf
-    // return value:
-    // 	the number of bytes actually written if successful
-    //	-1 on error
+    /** @brief Write multiple bytes from buffer to device.
+     * @param buf Buffer to store the data to write to the device
+     * @param nBytes Number of bytes to be written
+     * @return Number of bytes written during the operation (<=0 on failure)
+     */
     int write(uint8_t* buf, int nBytes);
 
-    // write nBytes bytes from buffer buf in register reg
-    // return value:
-    // 	the number of bytes actually written if successful
-    //	-1 on error
-    // note: first byte of the write sequence is the register address,
-    // the following bytes from buf are then written in a sequence
+    /** @brief Write multiple bytes from buffer to device at register address.
+     * @param reg Register address to read from
+     * @param buf Buffer to store the data to write to the device
+     * @param nBytes Number of bytes to be written
+     * @return Number of bytes written during the operation (<=0 on failure)
+     * @note First byte of the write sequence is the register address, 
+     * the following bytes from buf are then written in a sequence
+     */
     int writeReg(uint8_t reg, uint8_t* buf, int nBytes);
 
-    // read nBytes bytes into buffer buf from register reg
-    // return value:
-    // 	the number of bytes actually read if successful
-    //	-1 on error
-    // note: first writes reg address and after a repeated start
-    // reads in a sequence of bytes
-    // not all devices support this procedure
-    // refer to the device's datasheet
+    /** @brief Read multiple bytes into buffer from register address.
+     * First writes reg address and after a repeated start reads in a sequence of bytes.
+     * @param reg Register address to read from
+     * @param buf Buffer to store the data read from the device
+     * @param nBytes Number of bytes to be read during the operation
+     * @return Number of bytes actually read (<=0 on failure)
+     * @note Not all devices support this procedure. Refer to the device's datasheet.
+     */
     int readReg(uint8_t reg, uint8_t* buf, int nBytes);
 
-    /** Read a single bit from an 8-bit device register.
+    /** @brief Read a single bit from an 8-bit device register.
 	* @param regAddr Register regAddr to read from
 	* @param bitNum Bit position to read (0-7)
 	* @param data Container for single bit value

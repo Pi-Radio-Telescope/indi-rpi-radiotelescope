@@ -90,6 +90,15 @@ i2cDevice::~i2cDevice()
         fGlobalDeviceList.erase(it);
 }
 
+i2cDevice* i2cDevice::findDevice(uint8_t slaveAddress)
+{
+    for (auto device : fGlobalDeviceList) {
+        if (device != nullptr && device->getAddress() == slaveAddress)
+            return device;
+    }
+    return nullptr;
+}
+
 void i2cDevice::getCapabilities()
 {
     unsigned long funcs;
@@ -105,6 +114,14 @@ bool i2cDevice::devicePresent()
 {
     uint8_t dummy;
     return (read(&dummy, 1) == 1);
+}
+
+void i2cDevice::lock(bool locked)
+{
+    if (locked)
+        fMode |= MODE_LOCKED;
+    else
+        fMode &= ~MODE_LOCKED;
 }
 
 void i2cDevice::setAddress(uint8_t address)
