@@ -4,6 +4,15 @@
 */
 const double ADS1115::PGAGAINS[6] = { 6.144, 4.096, 2.048, 1.024, 0.512, 0.256 };
 
+void ADS1115::init()
+{
+    fPga[0] = fPga[1] = fPga[2] = fPga[3] = PGA4V;
+    fReadWaitDelay = READ_WAIT_DELAY_INIT;
+    fRate = 0x00; // RATE8
+    fAGC = false;
+    fTitle = "ADS1115";
+}
+
 int16_t ADS1115::readADC(unsigned int channel)
 {
     uint8_t writeBuf[3]; // Buffer to store the 3 bytes that we write to the I2C device

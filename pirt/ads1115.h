@@ -7,10 +7,9 @@
 // ADC ADS1x13/4/5 sampling readout delay
 #define READ_WAIT_DELAY_INIT 10
 
-/* ADS1115: 4(2) ch, 16 bit ADC  */
 /**
  * @brief ADS1115 (Texas Instruments) ADC readout class.
- * This class provides all functionalities to readout and configure an ADS1115 I2C analog-to-digital converter (ADC).
+ * This class provides all functionalities to readout and configure an ADS1115 (4 ch, 16 bit) I2C analog-to-digital converter (ADC).
  * For low-level access the i2c operations provided by the base class {@link i2cDevice} are used.
  * @author HG Zaunick
  */
@@ -99,14 +98,14 @@ protected:
     bool fDiffMode { false }; ///< measure differential input signals (true) or single ended (false=default)
     std::mutex fMutex {};
 
-    inline virtual void init()
-    {
-        fPga[0] = fPga[1] = fPga[2] = fPga[3] = PGA4V;
-        fReadWaitDelay = READ_WAIT_DELAY_INIT;
-        fRate = 0x00; // RATE8
-        fAGC = false;
-        fTitle = "ADS1115";
-    }
+    virtual void init();
+//     {
+//         fPga[0] = fPga[1] = fPga[2] = fPga[3] = PGA4V;
+//         fReadWaitDelay = READ_WAIT_DELAY_INIT;
+//         fRate = 0x00; // RATE8
+//         fAGC = false;
+//         fTitle = "ADS1115";
+//     }
 };
 
 #endif // !_ADS1115_H_
