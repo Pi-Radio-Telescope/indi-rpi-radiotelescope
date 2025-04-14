@@ -44,19 +44,47 @@ include_directories( ${EV_INCLUDE_DIR})
 
 include(CMakeCommon)
 
+set(SOURCE_FILES
+    "${CMAKE_CURRENT_SOURCE_DIR}/axis.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/gpioif.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/encoder.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/motordriver.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/i2cdevice.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/ads1115.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/rpi_temperatures.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/voltage_monitor.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/ads1115_measurement.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/pirt.cpp"
+)
+
+set(HEADER_FILES
+    "${CMAKE_CURRENT_SOURCE_DIR}/axis.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/gpioif.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/encoder.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/motordriver.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/i2cdevice.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/ads1115.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/rpi_temperatures.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/voltage_monitor.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/ads1115_measurement.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/pirt.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/utility.h"
+)
+
+set(PIRT_SOURCE_FILES
+    "${SOURCE_FILES}"
+    PARENT_SCOPE
+)
+
+set(PIRT_HEADER_FILES
+    "${HEADER_FILES}"
+    PARENT_SCOPE
+)
+
 # tell cmake to build our executable
 add_executable(
     indi_pirt
-	axis.cpp
-	gpioif.cpp
-	encoder.cpp
-	motordriver.cpp
-	i2cdevice.cpp
-	ads1115.cpp
-	rpi_temperatures.cpp
-	voltage_monitor.cpp
-	ads1115_measurement.cpp
-    pirt.cpp
+	${SOURCE_FILES}
 )
 
 add_executable(

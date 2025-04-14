@@ -27,20 +27,21 @@
 using namespace std;
 using namespace hgz;
 
-constexpr int MSQ_ID { 10 };
-constexpr unsigned long server_loop_delay_us { 10000UL };
-constexpr size_t MAX_MSG_LEN { 2048 };
+constexpr int MSQ_ID { 42 };
+constexpr unsigned long server_loop_delay_us { 20000UL };
+constexpr size_t MAX_MSG_LEN { 4*8192UL };
 
 const string defaultTaskFile = "/var/ratsche/ratsche_tasks";
 
 void Usage(const char* progname)
 {
 	cout<<"RaTSche - The Radiotelescope Task Scheduler"<<endl;
-	cout<<"v1.1 - HG Zaunick 2010-2011,2021"<<endl;
+	cout<<"v1.1 - HG Zaunick 2010-2011,2021-22"<<endl;
 	cout<<endl;
-	cout<<" Usage : "<<string(progname)<<"  [-vlEdph?] -k <keyID> -e|c|s <taskID> -a <taskfile> -x|o <path>"<<endl;
+	cout<<" Usage : "<<string(progname)<<"  [-vlrEdph?] -k <keyID> -e|c|s <taskID> -a <taskfile> -x|o <path>"<<endl;
 	cout<<"  command line options are:   "<<endl;
 	cout<<"	 -l            list all tasks"<<endl;
+	cout<<"	 -r            reverse sort of data output (with -l)"<<endl;
 	cout<<"	 -p            export tasklist (for storage in file) to stdout"<<endl;
 	cout<<"	 -k <keyID>    use message queue with key keyID"<<endl;
 	cout<<"	 -a <taskfile> add task(s) supplied in file taskfile"<<endl;
@@ -90,6 +91,7 @@ int send_message(int msqid, int fromID, int toID, int action, int subaction, tas
 	unsigned long int cnt=0;
 	while ((result=msgsnd(msqid, &smsg, buf_length, IPC_NOWAIT)) < 0 && cnt++<100) {
 		perror("msgsnd");
+        usleep(10000UL);
 	}
 	if (result<0) {
 		syslog (LOG_CRIT, "error in msgsnd: unable to access message queue");
@@ -642,8 +644,10 @@ int main() {
 	string execpath = "";
 	string datapath = "/tmp/ratsche";
     char buf[BUFSIZ];
+    bool list_tasks { false };
+    bool reverse_sort { false };
 
-	while ((ch = getopt(argc, argv, "vlpdEe:a:s:c:k:x:o:h?")) != EOF) {
+	while ((ch = getopt(argc, argv, "vlrpdEe:a:s:c:k:x:o:h?")) != EOF) {
 		switch ((char)ch) {
 			case 'v':
 				// increase verbosity level
@@ -668,14 +672,17 @@ int main() {
 				}
 				break;
 			case 'p':
-				cmdLineActions.push_back(make_pair((int)AC_LIST,0));
+				list_tasks = true;
 				exportTaskList=true;
 				break;
 			case 'd':
 				server=true;
 				break;
 			case 'l':
-				cmdLineActions.push_back(make_pair((int)AC_LIST,0));
+                list_tasks = true;
+				break;
+			case 'r':
+				reverse_sort = true;
 				break;
 			case 'E':
 				cmdLineActions.push_back(make_pair((int)AC_CLEAR,0));
@@ -707,7 +714,12 @@ int main() {
 		cout<<"pid="<<getpid()<<endl;
 		printf("Calling msgget with key %#lx and flag %#o\n",key,msgflg);
 	}
+    
+    if (list_tasks) {
+        cmdLineActions.push_back(make_pair((int)AC_LIST, static_cast<int>(reverse_sort)));
+    }
 
+	
 	if ((msqid = msgget(key, msgflg )) < 0) {
 		perror("error accessing message queue: msgget failed");
 		exit(1);
@@ -838,18 +850,20 @@ int main() {
 							//syslog (LOG_DEBUG, "received LIST request, sending back list of %d task(s)", tasklist.size());
 							if (!tasklist.size()) {
 								// send empty list
-								if (send_message(msqid, 1, fromid, AC_LIST, 0, NULL, 1, 0) < 0) {
+								if (send_message(msqid, 1, fromid, AC_LIST, subaction, NULL, 1, 0) < 0) {
 									syslog (LOG_CRIT, "unable to send message to message queue");
 									perror("send_message");
 								}
 							} else
-							for (int i=0; i<tasklist.size(); i++) {
-								task_t _task=toMsgTask(tasklist[i]);
-								if (send_message(msqid, 1, fromid, AC_LIST, 0, &_task, i+1, tasklist.size()) < 0) {
+                            for (size_t i=0; i<tasklist.size(); i++) {
+								const size_t curr_task { (subaction==0)?i:tasklist.size()-i-1 };
+                                task_t _task=toMsgTask(tasklist[curr_task]);
+								if (send_message(msqid, 1, fromid, AC_LIST, subaction, &_task, i+1, tasklist.size()) < 0) {
 									syslog (LOG_CRIT, "unable to send message to message queue");
 									perror("send_message");
 								}
 							}
+
 							break;
 						case AC_ADD:
 							// add task
@@ -968,13 +982,13 @@ int main() {
 	{
 		// list tasks
 		if ( act == AC_LIST ) {
-			if (send_message(msqid, getpid(), 1, AC_LIST, 0, NULL) < 0) {
+			if (send_message(msqid, getpid(), 1, AC_LIST, subact, NULL) < 0) {
 				perror("send_message in requesting task list failed");
 				exit(1);
 			}
 			else if (verbose>2) printf("sent LIST\n");
 
-			usleep(10000);
+			usleep(20000);
 
 			unsigned long int ctr=0;
 			int msgcount=-1;
@@ -987,8 +1001,8 @@ int main() {
 					tasklist.push_back(task);
 					if (verbose>3) cout<<"rx task entry: serid="<<serid<<" , sercnt="<<sercnt<<endl;
 				} else {
-					// sleep 10ms
-					usleep(10000);
+					// sleep 25ms
+					usleep(25000);
 					ctr++;
 				}
 			}
