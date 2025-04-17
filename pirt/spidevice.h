@@ -15,6 +15,8 @@ namespace PiRaTe {
 * executing this code must be granted.
 * @note Setting the word size is possible but the RPi hardware spi interface does not support
 * word sizes other than 8 bit.
+* @note The SPI1 and SPI2 buses on RPi are known to have limited functionality, such as
+* non-functional modes 1 and 3.
 */
 class spi_device {
 public:
