@@ -60,12 +60,14 @@ public:
     MotorDriver() = delete;
     /**
 	* @brief The main constructor.
-	* Initializes an object with the given gpio object pointer and gpio pin configuration.
+	* Initializes an object with the given gpio and pwm object pointers
+    * and the gpio pin configuration.
 	* @param gpio shared pointer to an initialized GPIO object
+	* @param pwm shared pointer to a PWM object (must be already exported)
 	* @param invertDirection flag which indicates, that positive/negative direction will be swapped
 	* @param adc shared_ptr object to an initialized instance of {@link ADS1115} ADC (not mandatory)
-	* @param adc_channel channel to use for supervision of motor current, when adc is specified
-	* @throws std::exception if the supplied gpio object is not initialized
+	* @param adc_channel channel to use for supervision of motor current in case an adc is specified
+	* @throws std::exception if the supplied gpio or pwm objects are not initialized
 	*/
 
     MotorDriver(
@@ -108,7 +110,6 @@ private:
     Pins fPins;
     std::shared_ptr<ADS1115> fAdc { nullptr };
     unsigned int fPwmFreq { DEFAULT_PWM_FREQ };
-    unsigned int fPwmRange { 255 };
     bool fUpdated { false };
     float fCurrentDutyCycle { 0. };
     float fTargetDutyCycle { 0. };
