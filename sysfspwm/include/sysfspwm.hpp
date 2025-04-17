@@ -1,9 +1,16 @@
- #pragma once
+#pragma once
 
 #include <udevpp.hpp>
 #include <vector>
 #include <chrono>
 #include <exception>
+
+/*
+ * Public sysfspwm class interface for accessing the kernel PWM functionality
+ * through the udev file system. The code was taken from https://github.com/zeroping/sysfspwm
+ * with modifications from https://github.com/danjperron/sysfspwm. The original license
+ * is attached in the source folder.
+ */
 
 namespace sysfspwm
 {
