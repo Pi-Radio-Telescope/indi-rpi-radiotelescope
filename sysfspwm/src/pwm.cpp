@@ -47,7 +47,7 @@ namespace sysfspwm
       period_ = std::chrono::nanoseconds(std::stoi(udevice_.get_sysattr("period")));
       duty_ = std::chrono::nanoseconds(std::stoi(udevice_.get_sysattr("duty_cycle")));
     }
-    catch (std::exception e)
+    catch (std::exception const& e)
     {
       throw PWMInterfaceException();
     }
@@ -66,7 +66,7 @@ namespace sysfspwm
     {
       period = std::stoi(udevice_.get_sysattr("period"));
     }
-    catch (std::exception e)
+    catch (std::exception const& e)
     {
       throw PWMInterfaceException();
     }
@@ -90,7 +90,7 @@ namespace sysfspwm
     {
       udevice_.set_sysattr("period", std::to_string(period_.count()));
     }
-    catch (std::exception e)
+    catch (std::exception const& e)
     {
       throw PWMArgumentException(*this, "period");
     }
@@ -105,7 +105,7 @@ namespace sysfspwm
     {
       duty = std::stoi(udevice_.get_sysattr("duty_cycle"));
     }
-    catch (std::exception e)
+    catch (std::exception const& e)
     {
       throw PWMInterfaceException();
     }
@@ -129,7 +129,7 @@ namespace sysfspwm
     {
       udevice_.set_sysattr("duty_cycle", std::to_string(duty_.count()));
     }
-    catch (std::exception e)
+    catch (std::exception const& e)
     {
       throw PWMArgumentException(*this, "duty_cycle");
     }
@@ -142,7 +142,7 @@ namespace sysfspwm
     {
       enabled = std::stoi(udevice_.get_sysattr("enable"));
     }
-    catch (std::exception e)
+    catch (std::exception const& e)
     {
       throw PWMInterfaceException();
     }
@@ -155,7 +155,7 @@ namespace sysfspwm
     {
       udevice_.set_sysattr("enable", std::to_string((int) enabled));
     }
-    catch (std::exception e)
+    catch (std::exception const& e)
     {
       throw PWMArgumentException(*this, "enable");
     }
@@ -169,7 +169,7 @@ namespace sysfspwm
     {
       inverted = udevice_.get_sysattr("polarity") != "normal";
     }
-    catch (std::exception e)
+    catch (std::exception const& e)
     {
       throw PWMInterfaceException();
     }
@@ -182,7 +182,7 @@ namespace sysfspwm
     {
       udevice_.set_sysattr("polarity", inverted ? "inversed" : "normal");
     }
-    catch (std::exception e)
+    catch (std::exception const& e)
     {
       throw PWMArgumentException(*this, "polarity");
     }
