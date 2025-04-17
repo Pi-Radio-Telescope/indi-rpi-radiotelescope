@@ -70,6 +70,7 @@ constexpr bool ALT_MOTOR_DIR_INVERT { true }; //< invert default (positive) dire
 constexpr char PWM_UDEV_PATH[] {"/sys/class/pwm/pwmchip0"};
 constexpr int AZ_PWM_CHANNEL { 0 };
 constexpr int ALT_PWM_CHANNEL { 1 };
+constexpr auto PWM_EXPORT_DELAY { std::chrono::microseconds(200'000) };
 
 constexpr PiRaTe::MotorDriver::Pins AZ_MOTOR_PINS {
     //.Pwm = 12,
@@ -785,21 +786,17 @@ bool PiRT::Connect()
         DEBUGF(INDI::Logger::DBG_ERROR, "ADS1115 at address 0x%02x not found.", VOLTAGE_MONITOR_ADC_ADDR);
     }
 
-//     for (sysfspwm::PWMChip pwmchip : sysfspwm::PWMChip::getSystemPWMChips())
-//     {
-//       std::cout << std::endl;
-//       std::cout << "Available PWMChip " << pwmchip.get_name() << std::endl;
-//       std::cout << "  at sysfs path: " << pwmchip.udevice_.get_syspath() << std::endl;
-//       std::cout << "  with " << pwmchip.get_npwm() << " pwms" << std::endl;
-//     }
-    
-    // initialize pwm udev system
-//     const std::string pwmchip_path {}
+    // initialize pwm chip (through udev system)
     sysfspwm::PWMChip pwmchip(std::string{PWM_UDEV_PATH});
-    std::shared_ptr<sysfspwm::PWM> pwm0;
-    pwm0.reset( new sysfspwm::PWM(pwmchip.export_pwm(AZ_PWM_CHANNEL)) );
-    //(pwmchip.export_pwm(AZ_PWM_CHANNEL));
+    if (pwmchip.get_npwm() < 2) {
+        // the system doesn't show at least two usable PWM channels, so we abort here
+        DEBUGF(INDI::Logger::DBG_ERROR, "PWM device %s does not have two usable channels (pwmchip.get_npwm()=%i).", pwmchip.get_name().c_str(), pwmchip.get_npwm());
+        return false;
+    }
+    // export both pwm channels from pwm chip
+    std::shared_ptr<sysfspwm::PWM> pwm0 { new sysfspwm::PWM(pwmchip.export_pwm(AZ_PWM_CHANNEL)) };
     std::shared_ptr<sysfspwm::PWM> pwm1 { new sysfspwm::PWM(pwmchip.export_pwm(ALT_PWM_CHANNEL)) };
+    std::this_thread::sleep_for(PWM_EXPORT_DELAY);
     
     // initialize Az motor driver
     az_motor.reset(new PiRaTe::MotorDriver(gpio, pwm0, AZ_MOTOR_PINS, AZ_MOTOR_DIR_INVERT, std::dynamic_pointer_cast<ADS1115>(i2cDeviceMap[MOTOR_ADC_ADDR]), 0));
