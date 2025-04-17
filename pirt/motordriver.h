@@ -1,5 +1,4 @@
-#ifndef MOTORDRIVERRT_H
-#define MOTORDRIVERRT_H
+#pragma once
 
 #include <chrono>
 #include <inttypes.h> // uint8_t, etc
@@ -19,9 +18,10 @@
 #include "utility.h"
 
 class GPIO;
-class ADS1115;
 
 namespace PiRaTe {
+
+class ADS1115;
 
 constexpr unsigned int DEFAULT_PWM_FREQ { 20'000 };
 constexpr unsigned int OFFSET_RINGBUFFER_DEPTH { 16 };
@@ -131,5 +131,3 @@ private:
 };
 
 } // namespace PiRaTe
-
-#endif

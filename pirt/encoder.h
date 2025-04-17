@@ -1,5 +1,4 @@
-#ifndef ENCODERSRT_H
-#define ENCODERSRT_H
+#pragma once
 
 #include <inttypes.h> // uint8_t, etc
 #include <iomanip>
@@ -104,5 +103,3 @@ private:
 };
 
 } // namespace PiRaTe
-
-#endif

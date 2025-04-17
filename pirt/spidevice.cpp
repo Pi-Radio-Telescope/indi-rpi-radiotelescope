@@ -11,7 +11,7 @@
 #include <sys/ioctl.h>
 #include <unistd.h>
 
-// namespace PiRaTe {
+namespace PiRaTe {
 
 spi_device::spi_device(const std::string& device_path)
     : m_device_path { device_path }
@@ -301,4 +301,4 @@ void spi_device::stop_timer()
     m_last_duration = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now() - m_start);
 }
 
-//} // namespace PiRaTe
+} // namespace PiRaTe

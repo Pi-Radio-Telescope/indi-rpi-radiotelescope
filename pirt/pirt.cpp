@@ -32,9 +32,9 @@
 #include "sysfspwm.hpp"
 
 namespace Connection {
-class Interface;
-class Serial;
-class TCP;
+    class Interface;
+    class Serial;
+    class TCP;
 }
 
 constexpr unsigned int SSI_BAUD_RATE { 1'000'000 }; //< SPI baud rate for encoder read-out
@@ -730,7 +730,7 @@ bool PiRT::Connect()
     }
 
     // initialize Az pos encoder connected to the main SPI interface
-    az_encoder.reset(new PiRaTe::SsiPosEncoder(std::string(AZ_SPIDEV_PATH), bitrate,spi_device::MODE::MODE3));
+    az_encoder.reset(new PiRaTe::SsiPosEncoder(std::string(AZ_SPIDEV_PATH), bitrate,PiRaTe::spi_device::MODE::MODE3));
     if (!az_encoder->isInitialized()) {
         DEBUG(INDI::Logger::DBG_ERROR, "Failed to connect to Az position encoder.");
         return false;
@@ -741,7 +741,7 @@ bool PiRT::Connect()
     az_encoder->setMtBitWidth(AzEncSettingN[1].value);
 
     // initialize Alt pos encoder connected to the aux SPI interface
-    el_encoder.reset(new PiRaTe::SsiPosEncoder(std::string(ALT_SPIDEV_PATH), bitrate,spi_device::MODE::MODE3));
+    el_encoder.reset(new PiRaTe::SsiPosEncoder(std::string(ALT_SPIDEV_PATH), bitrate,PiRaTe::spi_device::MODE::MODE3));
     if (!el_encoder->isInitialized()) {
         DEBUG(INDI::Logger::DBG_ERROR, "Failed to connect to Alt position encoder.");
         return false;
@@ -752,10 +752,10 @@ bool PiRT::Connect()
 
     // search for the ADS1115 ADCs at the specified addresses and initialize them
     // instantiate the first ADS1115 foreseen to read back the motor currents
-    std::shared_ptr<ADS1115> adc { new ADS1115(MOTOR_ADC_ADDR) };
+    std::shared_ptr<PiRaTe::ADS1115> adc { new PiRaTe::ADS1115(MOTOR_ADC_ADDR) };
     if (adc != nullptr && adc->devicePresent()) {
-        adc->setPga(ADS1115::PGA4V);
-        adc->setRate(ADS1115::RATE860);
+        adc->setPga(PiRaTe::ADS1115::PGA4V);
+        adc->setRate(PiRaTe::ADS1115::RATE860);
         adc->setAGC(true);
         double v1 = adc->readVoltage(0);
         double v2 = adc->readVoltage(1);
@@ -770,10 +770,10 @@ bool PiRT::Connect()
         deleteProperty(MotorCurrentLimitNP.name);
     }
     // instantiate second ADS1115 for voltage monitoring
-    adc.reset(new ADS1115(VOLTAGE_MONITOR_ADC_ADDR));
+    adc.reset(new PiRaTe::ADS1115(VOLTAGE_MONITOR_ADC_ADDR));
     if (adc != nullptr && adc->devicePresent()) {
-        adc->setPga(ADS1115::PGA4V);
-        adc->setRate(ADS1115::RATE860);
+        adc->setPga(PiRaTe::ADS1115::PGA4V);
+        adc->setRate(PiRaTe::ADS1115::RATE860);
         adc->setAGC(true);
         double v1 = adc->readVoltage(0);
         double v2 = adc->readVoltage(1);
@@ -799,13 +799,13 @@ bool PiRT::Connect()
     std::this_thread::sleep_for(PWM_EXPORT_DELAY);
     
     // initialize Az motor driver
-    az_motor.reset(new PiRaTe::MotorDriver(gpio, pwm0, AZ_MOTOR_PINS, AZ_MOTOR_DIR_INVERT, std::dynamic_pointer_cast<ADS1115>(i2cDeviceMap[MOTOR_ADC_ADDR]), 0));
+    az_motor.reset(new PiRaTe::MotorDriver(gpio, pwm0, AZ_MOTOR_PINS, AZ_MOTOR_DIR_INVERT, std::dynamic_pointer_cast<PiRaTe::ADS1115>(i2cDeviceMap[MOTOR_ADC_ADDR]), 0));
     if (!az_motor->isInitialized()) {
         DEBUG(INDI::Logger::DBG_ERROR, "Failed to initialize Az motor driver.");
         return false;
     }
     // initialize Alt motor driver
-    el_motor.reset(new PiRaTe::MotorDriver(gpio, pwm1, ALT_MOTOR_PINS, ALT_MOTOR_DIR_INVERT, std::dynamic_pointer_cast<ADS1115>(i2cDeviceMap[MOTOR_ADC_ADDR]), 1));
+    el_motor.reset(new PiRaTe::MotorDriver(gpio, pwm1, ALT_MOTOR_PINS, ALT_MOTOR_DIR_INVERT, std::dynamic_pointer_cast<PiRaTe::ADS1115>(i2cDeviceMap[MOTOR_ADC_ADDR]), 1));
     if (!el_motor->isInitialized()) {
         DEBUG(INDI::Logger::DBG_ERROR, "Failed to initialize El motor driver.");
         return false;
@@ -826,7 +826,7 @@ bool PiRT::Connect()
         auto it = i2cDeviceMap.find(item.adc_address);
         if (it == i2cDeviceMap.end())
             continue;
-        std::shared_ptr<ADS1115> adc(std::dynamic_pointer_cast<ADS1115>(it->second));
+        std::shared_ptr<PiRaTe::ADS1115> adc(std::dynamic_pointer_cast<PiRaTe::ADS1115>(it->second));
         std::shared_ptr<PiRaTe::Ads1115VoltageMonitor> mon(
             new PiRaTe::Ads1115VoltageMonitor(item.name, adc, item.adc_channel, item.nominal, item.divider_ratio, item.nominal / 10.));
         voltageMonitors.emplace_back(std::move(mon));
@@ -846,7 +846,7 @@ bool PiRT::Connect()
         auto it = i2cDeviceMap.find(item.adc_address);
         if (it == i2cDeviceMap.end())
             continue;
-        std::shared_ptr<ADS1115> adc(std::dynamic_pointer_cast<ADS1115>(it->second));
+        std::shared_ptr<PiRaTe::ADS1115> adc(std::dynamic_pointer_cast<PiRaTe::ADS1115>(it->second));
         std::shared_ptr<PiRaTe::Ads1115Measurement> meas(
             new PiRaTe::Ads1115Measurement(item.name, adc, item.adc_channel, item.divider_ratio, DEFAULT_INT_TIME));
         voltageMeasurements.emplace_back(std::move(meas));

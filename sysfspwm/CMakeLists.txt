@@ -35,7 +35,7 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 target_include_directories(sysfspwm
     PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/include
-        $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>  # For smip_export.h
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
 )
 
 target_link_libraries(sysfspwm udevpp)

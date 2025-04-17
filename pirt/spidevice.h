@@ -5,7 +5,7 @@
 #include <iostream>
 #include <string>
 
-//namespace PiRaTe {
+namespace PiRaTe {
 
 /**
 * @brief The spi_device class
@@ -233,4 +233,4 @@ private:
     std::chrono::system_clock::time_point m_start {};
 };
 
-//} // namespace PiRaTe
+} // namespace PiRaTe

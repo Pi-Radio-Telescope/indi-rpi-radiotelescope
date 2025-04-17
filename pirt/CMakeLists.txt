@@ -100,7 +100,6 @@ add_dependencies(indi_pirt udevpp sysfspwm)
 add_executable(
     encodertest
 	encodertest.cpp
-	gpioif.cpp
 	spidevice.cpp
 	encoder.cpp
 )
@@ -120,7 +119,6 @@ target_link_libraries(
 
 target_link_libraries(
     encodertest
-    pigpiod_if2
     rt
     pthread
 )

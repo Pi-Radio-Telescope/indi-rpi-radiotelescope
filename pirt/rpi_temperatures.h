@@ -1,5 +1,4 @@
-#ifndef RPITEMP_H
-#define RPITEMP_H
+#pragma once
 
 #include <cmath>
 #include <functional>
@@ -49,5 +48,3 @@ private:
 };
 
 } // namespace PiRaTe
-
-#endif // #define RPITEMP_H
