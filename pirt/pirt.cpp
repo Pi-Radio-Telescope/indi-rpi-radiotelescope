@@ -37,7 +37,7 @@ class Serial;
 class TCP;
 }
 
-constexpr unsigned int SSI_BAUD_RATE { 500000 }; //< SPI baud rate for encoder read-out
+constexpr unsigned int SSI_BAUD_RATE { 500'000 }; //< SPI baud rate for encoder read-out
 constexpr unsigned int POLL_INTERVAL_MS { 200 }; //< polling interval of this driver
 constexpr double DEFAULT_AZ_AXIS_TURNS_RATIO { 152. / 9. }; //< ratio between Az encoder revolutions and Az axis revolutions
 constexpr double DEFAULT_EL_AXIS_TURNS_RATIO { 1. }; //< ratio between Alt encoder revolutions and Alt axis revolutions
