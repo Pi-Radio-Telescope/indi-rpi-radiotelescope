@@ -29,6 +29,8 @@
 #include "gpioif.h"
 #include "motordriver.h"
 
+#include "sysfspwm.hpp"
+
 namespace Connection {
 class Interface;
 class Serial;
@@ -62,8 +64,12 @@ constexpr double ALT_MOTOR_CURRENT_LIMIT_DEFAULT { 3.0 }; //< absolute motor cur
 constexpr bool AZ_MOTOR_DIR_INVERT { true }; //< invert default (positive) direction of Az motor
 constexpr bool ALT_MOTOR_DIR_INVERT { true }; //< invert default (positive) direction of Alt motor
 
+constexpr char PWM_UDEV_PATH[] {"/sys/class/pwm/pwmchip0"};
+constexpr int AZ_PWM_CHANNEL { 0 };
+constexpr int ALT_PWM_CHANNEL { 1 };
+
 constexpr PiRaTe::MotorDriver::Pins AZ_MOTOR_PINS {
-    .Pwm = 12,
+    //.Pwm = 12,
     .Dir = -1,
     .DirA = 23,
     .DirB = 24,
@@ -72,7 +78,7 @@ constexpr PiRaTe::MotorDriver::Pins AZ_MOTOR_PINS {
 }; //< GPIO pin mapping to functions provided by motor driver
 
 constexpr PiRaTe::MotorDriver::Pins ALT_MOTOR_PINS {
-    .Pwm = 13,
+    //.Pwm = 13,
     .Dir = -1,
     .DirA = 5,
     .DirB = 6,
@@ -776,14 +782,30 @@ bool PiRT::Connect()
         DEBUGF(INDI::Logger::DBG_ERROR, "ADS1115 at address 0x%02x not found.", VOLTAGE_MONITOR_ADC_ADDR);
     }
 
+//     for (sysfspwm::PWMChip pwmchip : sysfspwm::PWMChip::getSystemPWMChips())
+//     {
+//       std::cout << std::endl;
+//       std::cout << "Available PWMChip " << pwmchip.get_name() << std::endl;
+//       std::cout << "  at sysfs path: " << pwmchip.udevice_.get_syspath() << std::endl;
+//       std::cout << "  with " << pwmchip.get_npwm() << " pwms" << std::endl;
+//     }
+    
+    // initialize pwm udev system
+//     const std::string pwmchip_path {}
+    sysfspwm::PWMChip pwmchip(std::string{PWM_UDEV_PATH});
+    std::shared_ptr<sysfspwm::PWM> pwm0;
+    pwm0.reset( new sysfspwm::PWM(pwmchip.export_pwm(AZ_PWM_CHANNEL)) );
+    //(pwmchip.export_pwm(AZ_PWM_CHANNEL));
+    std::shared_ptr<sysfspwm::PWM> pwm1 { new sysfspwm::PWM(pwmchip.export_pwm(ALT_PWM_CHANNEL)) };
+    
     // initialize Az motor driver
-    az_motor.reset(new PiRaTe::MotorDriver(gpio, AZ_MOTOR_PINS, AZ_MOTOR_DIR_INVERT, std::dynamic_pointer_cast<ADS1115>(i2cDeviceMap[MOTOR_ADC_ADDR]), 0));
+    az_motor.reset(new PiRaTe::MotorDriver(gpio, pwm0, AZ_MOTOR_PINS, AZ_MOTOR_DIR_INVERT, std::dynamic_pointer_cast<ADS1115>(i2cDeviceMap[MOTOR_ADC_ADDR]), 0));
     if (!az_motor->isInitialized()) {
         DEBUG(INDI::Logger::DBG_ERROR, "Failed to initialize Az motor driver.");
         return false;
     }
     // initialize Alt motor driver
-    el_motor.reset(new PiRaTe::MotorDriver(gpio, ALT_MOTOR_PINS, ALT_MOTOR_DIR_INVERT, std::dynamic_pointer_cast<ADS1115>(i2cDeviceMap[MOTOR_ADC_ADDR]), 1));
+    el_motor.reset(new PiRaTe::MotorDriver(gpio, pwm1, ALT_MOTOR_PINS, ALT_MOTOR_DIR_INVERT, std::dynamic_pointer_cast<ADS1115>(i2cDeviceMap[MOTOR_ADC_ADDR]), 1));
     if (!el_motor->isInitialized()) {
         DEBUG(INDI::Logger::DBG_ERROR, "Failed to initialize El motor driver.");
         return false;

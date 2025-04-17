@@ -15,6 +15,7 @@
 #include <vector>
 
 #include "gpioif.h"
+#include "sysfspwm.hpp"
 #include "utility.h"
 
 class GPIO;
@@ -22,7 +23,7 @@ class ADS1115;
 
 namespace PiRaTe {
 
-constexpr unsigned int DEFAULT_PWM_FREQ { 20000 };
+constexpr unsigned int DEFAULT_PWM_FREQ { 20'000 };
 constexpr unsigned int OFFSET_RINGBUFFER_DEPTH { 16 };
 
 /**
@@ -48,7 +49,7 @@ public:
 	* @note Unused pins must be set to -1.
 	*/
     struct Pins {
-        int Pwm; ///< GPIO pin of the PWM signal (output)
+        //int Pwm; ///< GPIO pin of the PWM signal (output)
         int Dir; ///< GPIO pin of the direction signal (output). This field must be defined, when only one direction signal is used
         int DirA; ///< GPIO pin of the direction signal (output, normal polarity). Use this field together with the DirB pin when two phase shifted signals are used for the direction
         int DirB; ///< GPIO pin of the direction signal (output, inverted polarity). Use this field together with the DirA pin when two phase shifted signals are used for the direction
@@ -67,7 +68,10 @@ public:
 	* @throws std::exception if the supplied gpio object is not initialized
 	*/
 
-    MotorDriver(std::shared_ptr<GPIO> gpio, Pins pins,
+    MotorDriver(
+        std::shared_ptr<GPIO> gpio,
+        std::shared_ptr<sysfspwm::PWM> pwm,
+        Pins pins,
         bool invertDirection = false,
         std::shared_ptr<ADS1115> adc = nullptr,
         std::uint8_t adc_channel = 0);
@@ -100,6 +104,7 @@ private:
     void measureVoltageOffset();
 
     std::shared_ptr<GPIO> fGpio { nullptr };
+    std::shared_ptr<sysfspwm::PWM> fPwm { nullptr };
     Pins fPins;
     std::shared_ptr<ADS1115> fAdc { nullptr };
     unsigned int fPwmFreq { DEFAULT_PWM_FREQ };

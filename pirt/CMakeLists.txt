@@ -1,13 +1,19 @@
 # define the project name
 project(indi-pirt C CXX)
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 3.14)
 
 include(GNUInstallDirs)
+#include(FetchContent)
+
+ADD_DEFINITIONS(-std=gnu++17)
+ADD_DEFINITIONS(-Wall)
+ADD_DEFINITIONS(-Wno-psabi)
 
 # add our cmake_modules folder
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake_modules/")
 
 # find our required packages
+find_package(PkgConfig REQUIRED)
 find_package(INDI REQUIRED)
 find_package(Nova REQUIRED)
 find_package(ZLIB REQUIRED)
@@ -87,6 +93,8 @@ add_executable(
 	${SOURCE_FILES}
 )
 
+add_dependencies(indi_pirt udevpp sysfspwm)
+
 add_executable(
     encodertest
 	encodertest.cpp
@@ -104,6 +112,8 @@ target_link_libraries(
     pigpiod_if2
     rt
     pthread
+    udevpp
+    sysfspwm
 )
 
 target_link_libraries(
