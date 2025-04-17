@@ -6,8 +6,8 @@
 #include <unistd.h>
 
 #include "encoder.h"
-#include "gpioif.h"
 #include "utility.h"
+#include "spidevice.h"
 
 #define DEFAULT_VERBOSITY 1
 
@@ -35,18 +35,17 @@ auto SsiPosEncoder::gray_decode(std::uint32_t g) -> std::uint32_t
     return g;
 }
 
-SsiPosEncoder::SsiPosEncoder(std::shared_ptr<GPIO> gpio, GPIO::SPI_INTERFACE spi_interface, unsigned int baudrate, std::uint8_t spi_channel, GPIO::SPI_MODE spi_mode)
-    : fGpio { gpio }
+SsiPosEncoder::SsiPosEncoder(const std::string& spidev_path, unsigned int baudrate, spi_device::mode_t spi_mode)
+    : fSpi { std::make_unique<spi_device>(spidev_path) }
 {
-    if (fGpio == nullptr) {
-        std::cerr << "Error: no valid GPIO instance.\n";
+    if (fSpi == nullptr) {
+        std::cerr << "Error: no valid SPI instance.\n";
         throw std::exception();
     }
-    //	std::cout<<"pi handle="<<fGpio->handle()<<"\n";
-    fSpiHandle = fGpio->spi_init(spi_interface, spi_channel, spi_mode, baudrate, false, false);
-    //	std::cout<<"spi handle="<<fSpiHandle<<"\n";
-    if (fSpiHandle < 0) {
-        std::cerr << "Error opening spi interface.\n";
+
+    struct spi_device::config_t spi_config { spi_mode | spi_device::MODE::NO_CS, 8, baudrate, 0 };
+    if (!fSpi->set_config(spi_config)) {
+        std::cerr << "Error: no valid SPI configuration.\n";
         throw std::exception();
     }
 
@@ -68,8 +67,8 @@ SsiPosEncoder::~SsiPosEncoder()
         fThread->join();
     fNrInstances--;
     // close SPI device
-    if (fSpiHandle >= 0 && fGpio != nullptr)
-        fGpio->spi_close(fSpiHandle);
+    if (fSpi != nullptr)
+        fSpi->close();
 }
 
 // this is the background thread loop
@@ -173,15 +172,17 @@ void SsiPosEncoder::readLoop()
 
 auto SsiPosEncoder::readDataWord(std::uint32_t& data) -> bool
 {
-    if (fSpiHandle < 0 || fGpio == nullptr)
+    if (fSpi == nullptr)
         return false;
     constexpr unsigned int nBytes = 4;
-    std::vector<std::uint8_t> bytevec = fGpio->spi_read(fSpiHandle, nBytes);
-    if (bytevec.size() != nBytes) {
-        std::cout << "error reading correct number of bytes from encoder.\n";
-        return false;
-    }
-    data = bytevec[3] | (bytevec[2] << 8) | (bytevec[1] << 16) | (bytevec[0] << 24);
+    std::array<std::uint8_t, nBytes> buffer { 0, 0, 0, 0 };
+    if (fSpi->is_open()) {
+        [[maybe_unused]] auto opresult = fSpi->read(buffer.data(), nBytes);
+    } else return false;
+    data = static_cast<std::uint32_t>(buffer[3]) 
+        | (static_cast<std::uint32_t>(buffer[2]) << 8) 
+        | (static_cast<std::uint32_t>(buffer[1]) << 16) 
+        | (static_cast<std::uint32_t>(buffer[0]) << 24);
     return true;
 }
 

@@ -38,7 +38,9 @@ constexpr unsigned int OFFSET_RINGBUFFER_DEPTH { 16 };
  * measured, a shared pointer to an instance of an {@link ADS1115} class can be provided additionally in the constructor.
  * It is assumed, that the motor driver's current-supervision signal is connected to one input channel of the ADC.
  * Specify the corresponding ADS1115 channel in the constructor in this case.
- * @note none
+ * @note In order to use the hardware pwm interface, the sysfs entries have to be created first by
+ * enabling the pwm-2chan overlay in /boot/config.txt with the following entry:
+ * @verbatim dtoverlay=pwm-2chan,pin=12,func=4,pin2=13,func2=4 @endverbatim
  * @author HG Zaunick
  */
 class MotorDriver {

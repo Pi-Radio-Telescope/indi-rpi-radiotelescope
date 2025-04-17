@@ -61,6 +61,7 @@ set(SOURCE_FILES
     "${CMAKE_CURRENT_SOURCE_DIR}/voltage_monitor.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/ads1115_measurement.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/pirt.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/spidevice.cpp"
 )
 
 set(HEADER_FILES
@@ -75,6 +76,7 @@ set(HEADER_FILES
     "${CMAKE_CURRENT_SOURCE_DIR}/ads1115_measurement.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/pirt.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/utility.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/spidevice.h"
 )
 
 set(PIRT_SOURCE_FILES
@@ -99,9 +101,9 @@ add_executable(
     encodertest
 	encodertest.cpp
 	gpioif.cpp
+	spidevice.cpp
 	encoder.cpp
 )
-
 
 # and link it to these libraries
 target_link_libraries(

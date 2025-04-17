@@ -37,7 +37,10 @@ class Serial;
 class TCP;
 }
 
-constexpr unsigned int SSI_BAUD_RATE { 500'000 }; //< SPI baud rate for encoder read-out
+constexpr unsigned int SSI_BAUD_RATE { 1'000'000 }; //< SPI baud rate for encoder read-out
+constexpr char AZ_SPIDEV_PATH[] {"/dev/spidev0.0"};
+constexpr char ALT_SPIDEV_PATH[] {"/dev/spidev6.0"};
+
 constexpr unsigned int POLL_INTERVAL_MS { 200 }; //< polling interval of this driver
 constexpr double DEFAULT_AZ_AXIS_TURNS_RATIO { 152. / 9. }; //< ratio between Az encoder revolutions and Az axis revolutions
 constexpr double DEFAULT_EL_AXIS_TURNS_RATIO { 1. }; //< ratio between Alt encoder revolutions and Alt axis revolutions
@@ -720,13 +723,13 @@ bool PiRT::Connect()
 
     // set the baud rate on the SPI interface for communication with the pos encoders
     unsigned int bitrate = static_cast<unsigned int>(EncoderBitRateNP.np[0].value);
-    if (bitrate < 80000 || bitrate > 5000000) {
+    if (bitrate < 80'000 || bitrate > 5'000'000) {
         DEBUG(INDI::Logger::DBG_ERROR, "SSI bitrate out of range (80k...5M)");
         return false;
     }
 
     // initialize Az pos encoder connected to the main SPI interface
-    az_encoder.reset(new PiRaTe::SsiPosEncoder(gpio, GPIO::SPI_INTERFACE::Main, bitrate, 0, GPIO::SPI_MODE::POL1PHA1));
+    az_encoder.reset(new PiRaTe::SsiPosEncoder(std::string(AZ_SPIDEV_PATH), bitrate,spi_device::MODE::MODE3));
     if (!az_encoder->isInitialized()) {
         DEBUG(INDI::Logger::DBG_ERROR, "Failed to connect to Az position encoder.");
         return false;
@@ -737,7 +740,7 @@ bool PiRT::Connect()
     az_encoder->setMtBitWidth(AzEncSettingN[1].value);
 
     // initialize Alt pos encoder connected to the aux SPI interface
-    el_encoder.reset(new PiRaTe::SsiPosEncoder(gpio, GPIO::SPI_INTERFACE::Aux, bitrate));
+    el_encoder.reset(new PiRaTe::SsiPosEncoder(std::string(ALT_SPIDEV_PATH), bitrate,spi_device::MODE::MODE3));
     if (!el_encoder->isInitialized()) {
         DEBUG(INDI::Logger::DBG_ERROR, "Failed to connect to Alt position encoder.");
         return false;
