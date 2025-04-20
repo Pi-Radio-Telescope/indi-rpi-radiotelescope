@@ -717,10 +717,9 @@ bool PiRT::Connect()
     az_motor.reset();
     el_motor.reset();
 
-    //	gpio.reset( new GPIO(host, port) );
     gpio.reset(new PiRaTe::Gpio(GPIO_CHIP_PATH));
     if (!gpio->is_initialised()) {
-        DEBUG(INDI::Logger::DBG_ERROR, "Could not initialize GPIO interface. Is pigpiod running?");
+        DEBUGF(INDI::Logger::DBG_ERROR, "Could not initialize GPIO interface. Is gpiod installed and %s available?", GPIO_CHIP_PATH);
         return false;
     }
 
@@ -732,9 +731,9 @@ bool PiRT::Connect()
     }
 
     // initialize Az pos encoder connected to the main SPI interface
-    az_encoder.reset(new PiRaTe::SsiPosEncoder(std::string(AZ_SPIDEV_PATH), bitrate,PiRaTe::spi_device::MODE::MODE3));
+    az_encoder.reset(new PiRaTe::SsiPosEncoder(std::string(AZ_SPIDEV_PATH), bitrate, PiRaTe::spi_device::MODE::MODE3));
     if (!az_encoder->isInitialized()) {
-        DEBUG(INDI::Logger::DBG_ERROR, "Failed to connect to Az position encoder.");
+        DEBUGF(INDI::Logger::DBG_ERROR, "Failed to connect to Az position encoder at %s", AZ_SPIDEV_PATH);
         return false;
     }
     DEBUG(INDI::Logger::DBG_SESSION, "Az position encoder ok.");
@@ -743,9 +742,9 @@ bool PiRT::Connect()
     az_encoder->setMtBitWidth(AzEncSettingN[1].value);
 
     // initialize Alt pos encoder connected to the aux SPI interface
-    el_encoder.reset(new PiRaTe::SsiPosEncoder(std::string(ALT_SPIDEV_PATH), bitrate,PiRaTe::spi_device::MODE::MODE3));
+    el_encoder.reset(new PiRaTe::SsiPosEncoder(std::string(ALT_SPIDEV_PATH), bitrate, PiRaTe::spi_device::MODE::MODE3));
     if (!el_encoder->isInitialized()) {
-        DEBUG(INDI::Logger::DBG_ERROR, "Failed to connect to Alt position encoder.");
+        DEBUGF(INDI::Logger::DBG_ERROR, "Failed to connect to Alt position encoder at %s", ALT_SPIDEV_PATH);
         return false;
     }
     DEBUG(INDI::Logger::DBG_SESSION, "Alt position encoder ok.");
