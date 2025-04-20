@@ -51,9 +51,9 @@ struct EquCoords {
     PiRaTe::RotAxis Dec { -90., 90., 360. };
 };
 
-class GPIO;
 
 namespace PiRaTe {
+    class Gpio;
     class SsiPosEncoder;
     class MotorDriver;
     class i2cDevice;
@@ -190,7 +190,7 @@ private:
     IPState lastHorState;
     uint8_t DBG_SCOPE { INDI::Logger::DBG_IGNORE };
 
-    std::shared_ptr<GPIO> gpio { nullptr };
+    std::shared_ptr<PiRaTe::Gpio> gpio { nullptr };
     std::unique_ptr<PiRaTe::SsiPosEncoder> az_encoder { nullptr };
     std::unique_ptr<PiRaTe::SsiPosEncoder> el_encoder { nullptr };
     std::unique_ptr<PiRaTe::MotorDriver> az_motor { nullptr };

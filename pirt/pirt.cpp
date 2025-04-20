@@ -37,6 +37,8 @@ namespace Connection {
     class TCP;
 }
 
+constexpr char GPIO_CHIP_PATH[] {"/dev/gpiochip0"};
+
 constexpr unsigned int SSI_BAUD_RATE { 1'000'000 }; //< SPI baud rate for encoder read-out
 constexpr char AZ_SPIDEV_PATH[] {"/dev/spidev0.0"};
 constexpr char ALT_SPIDEV_PATH[] {"/dev/spidev6.0"};
@@ -716,8 +718,8 @@ bool PiRT::Connect()
     el_motor.reset();
 
     //	gpio.reset( new GPIO(host, port) );
-    gpio.reset(new GPIO("localhost", "8888"));
-    if (!gpio->isInitialized()) {
+    gpio.reset(new PiRaTe::Gpio(GPIO_CHIP_PATH));
+    if (!gpio->is_initialised()) {
         DEBUG(INDI::Logger::DBG_ERROR, "Could not initialize GPIO interface. Is pigpiod running?");
         return false;
     }
@@ -917,7 +919,7 @@ bool PiRT::Handshake()
     // When communicating with a real mount, we check here if commands are receieved
     // and acknolowedged by the mount.
     if (isConnected()) {
-        if (!gpio->isInitialized())
+        if (!gpio->is_initialised())
             return false;
         if (!az_encoder->statusOk())
             return false;
@@ -1255,7 +1257,7 @@ void PiRT::updateMonitoring()
     // update inputs
     bool change_detected { false };
     for (std::size_t index = 0; index < GpioInputVector.size(); index++) {
-        const bool state = gpio->get_gpio_state(GpioInputVector[index].gpio_pin, nullptr);
+        const bool state = gpio->get_gpio_state(GpioInputVector[index].gpio_pin);
         if ((GpioInputL[index].s == IPS_OK && !state) || (GpioInputL[index].s == IPS_IDLE && state)) {
             // the state of the pin changed
             change_detected = true;

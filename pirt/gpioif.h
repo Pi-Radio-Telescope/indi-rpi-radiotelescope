@@ -1,5 +1,4 @@
-#ifndef GPIO_H
-#define GPIO_H
+#pragma once
 
 #include <chrono>
 #include <inttypes.h> // uint8_t, etc
@@ -13,58 +12,93 @@
 #include <thread>
 #include <utility>
 #include <vector>
+#include <memory>
+#include <functional>
+#include <map>
 
-// namespace PiRaTe {
+#include <gpiod.hpp>
+
+namespace PiRaTe {
+
+constexpr char DEFAULT_GPIO_DEVPATH[] { "/dev/gpiochip0" };    
+
 /**
  * @brief GPIO interface class.
- * This class encapsulates access to the Raspberry Pi GPIO interface based on the pigpiod daemon.
- * @note The class will connect via TCP socket to a running instance of the pigpiod daemon with 
- * the network address and port as constructor arguments.
+ * This class encapsulates access to the Raspberry Pi GPIO interface based on the gpiod userspace kernel device /dev/gpiochipX.
+ * @note 
  * @author HG Zaunick
  */
-class GPIO {
+class Gpio {
 public:
-    enum class SPI_INTERFACE {
-        Main,
-        Aux
+    struct Direction : private gpiod::line {
+    public:
+        using gpiod::line::DIRECTION_INPUT;
+        using gpiod::line::DIRECTION_OUTPUT;
+    };
+    struct PinBias : private gpiod::line_request {
+    public:    
+        using gpiod::line_request::FLAG_ACTIVE_LOW;
+        using gpiod::line_request::FLAG_OPEN_SOURCE;
+        using gpiod::line_request::FLAG_OPEN_DRAIN;
+        using gpiod::line_request::FLAG_BIAS_DISABLE;
+        using gpiod::line_request::FLAG_BIAS_PULL_DOWN;
+        using gpiod::line_request::FLAG_BIAS_PULL_UP;
+    };
+    struct EventEdge : private gpiod::line_request {
+    public:
+        using gpiod::line_request::EVENT_FALLING_EDGE;
+        using gpiod::line_request::EVENT_RISING_EDGE;
+        using gpiod::line_request::EVENT_BOTH_EDGES;
     };
 
-    enum class SPI_MODE : std::uint8_t {
-        POL0PHA0 = 0,
-        POL0PHA1 = 1,
-        POL1PHA0 = 2,
-        POL1PHA1 = 3
-    };
+    static constexpr unsigned int UNDEFINED_GPIO { 256 };
 
-    GPIO() = delete;
-    GPIO(const std::string& host, const std::string& port = "8888");
-    virtual ~GPIO();
+    Gpio(const std::string& gpio_chip_devpath);
+    ~Gpio();
 
-    virtual bool isInitialized() const { return (fHandle >= 0); }
+    gpiod::chip& chip() { return fChip; }
+    const gpiod::chip& chip() const { return fChip; }
+    
+    bool isInhibited() const { return inhibit; }
 
-    [[nodiscard]] auto spi_init(SPI_INTERFACE interface, std::uint8_t channel, SPI_MODE mode, unsigned int baudrate, bool lsb_first = false, bool use_cs = true) -> int;
-    [[nodiscard]] auto spi_read(unsigned int spi_handle, unsigned int nBytes) -> std::vector<std::uint8_t>;
-    [[nodiscard]] auto spi_write(unsigned int spi_handle, const std::vector<std::uint8_t>& data) -> bool;
-    void spi_close(int spi_handle);
-    [[nodiscard]] auto handle() const -> int { return fHandle; }
+    typedef std::chrono::nanoseconds timestamp_t;
+    typedef std::function<void(unsigned int, timestamp_t)> event_callback_t;
 
-    auto pwm_set_frequency(unsigned int gpio_pin, unsigned int freq) -> bool;
-    auto pwm_set_range(unsigned int gpio_pin, unsigned int range) -> bool;
-    auto pwm_set_value(unsigned int gpio_pin, unsigned int value) -> bool;
-    void pwm_off(unsigned int gpio_pin);
-    auto hw_pwm_set_value(unsigned int gpio_pin, unsigned int freq, std::uint32_t value) -> bool;
+    void start();
+    void stop();
+    bool is_initialised();
+    bool setPinInput(unsigned int gpio, std::bitset<32> flags = {});
+    bool setPinOutput(unsigned int gpio, bool initState, std::bitset<32> flags = {});
 
+    bool setPinBias(unsigned int gpio, std::bitset<32> bias_flags);
+    bool setPinState(unsigned int gpio, bool state);
+    bool getPinState(unsigned int gpio);
+    bool registerInterrupt(unsigned int gpio, int edge, std::bitset<32> bias_flags);
+    bool unRegisterInterrupt(unsigned int gpio);
+    void setInhibited(bool inh = true) { inhibit = inh; }
+    void set_event_callback(event_callback_t cb) { fEventCallback = cb; }
+    
     auto set_gpio_direction(unsigned int gpio_pin, bool output) -> bool;
     auto set_gpio_state(unsigned int gpio_pin, bool state) -> bool;
-    auto get_gpio_state(unsigned int gpio_pin, bool* err) -> bool;
+    auto get_gpio_state(unsigned int gpio_pin) -> bool;
     auto set_gpio_pullup(unsigned int gpio_pin, bool pullup_enable = true) -> bool;
     auto set_gpio_pulldown(unsigned int gpio_pin, bool pulldown_enable = true) -> bool;
 
-protected:
-    int fHandle { -1 };
+
+private:
+    void reloadInterruptSettings();
+    [[gnu::hot]] void eventHandler(gpiod::line line);
+    [[gnu::hot]] void processEvent(unsigned int gpio, gpiod::line_event event);
+
+    bool inhibit { false };
+    int verbose { 0 };
+    gpiod::chip fChip {};
+    std::map<unsigned int, gpiod::line> fInterruptLineMap {};
+    std::map<unsigned int, gpiod::line> fLineMap {};
+    bool fThreadRunning { false };
+    std::map<unsigned int, std::unique_ptr<std::thread>> fThreads {};
     std::mutex fMutex;
+    event_callback_t fEventCallback;
 };
 
-//} // namespace PiRaTe
-
-#endif
+} // namespace PiRaTe

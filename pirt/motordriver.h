@@ -17,7 +17,7 @@
 #include "sysfspwm.hpp"
 #include "utility.h"
 
-class GPIO;
+class Gpio;
 
 namespace PiRaTe {
 
@@ -73,7 +73,7 @@ public:
 	*/
 
     MotorDriver(
-        std::shared_ptr<GPIO> gpio,
+        std::shared_ptr<Gpio> gpio,
         std::shared_ptr<sysfspwm::PWM> pwm,
         Pins pins,
         bool invertDirection = false,
@@ -107,7 +107,7 @@ private:
     void setSpeed(float speed_ratio);
     void measureVoltageOffset();
 
-    std::shared_ptr<GPIO> fGpio { nullptr };
+    std::shared_ptr<Gpio> fGpio { nullptr };
     std::shared_ptr<sysfspwm::PWM> fPwm { nullptr };
     Pins fPins;
     std::shared_ptr<ADS1115> fAdc { nullptr };

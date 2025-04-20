@@ -18,16 +18,15 @@ find_package(INDI REQUIRED)
 find_package(Nova REQUIRED)
 find_package(ZLIB REQUIRED)
 find_package(GSL REQUIRED)
-#find_library(LIBGPIOD gpiod REQUIRED)
-find_library(PIGPIOD_IF2 pigpiod_if2 REQUIRED)
+find_library(GPIODCXX gpiodcxx REQUIRED)
 find_library(RT rt REQUIRED)
 
-#reminder what we installed to get everything running:
-# pigpiod libpigpio-dev libpigpiod-if-dev
+# Ensure the public interface header is visible
+#target_include_directories(sysfspwm PUBLIC ${sysfspwm_SOURCE_DIR}/include)
 
 # these will be used to set the version number in config.h and our driver's xml file
 set(CDRIVER_VERSION_MAJOR 0)
-set(CDRIVER_VERSION_MINOR 2)
+set(CDRIVER_VERSION_MINOR 3)
 
 # do the replacement in the config.h
 configure_file(
@@ -110,11 +109,11 @@ target_link_libraries(
     ${INDI_LIBRARIES}
     ${NOVA_LIBRARIES}
     ${GSL_LIBRARIES}
-    pigpiod_if2
     rt
     pthread
     udevpp
     sysfspwm
+    gpiodcxx
 )
 
 target_link_libraries(

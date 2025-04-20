@@ -24,7 +24,7 @@ constexpr double ramp_increment { static_cast<double>(loop_delay.count()) / ramp
 constexpr double MOTOR_CURRENT_FACTOR { 1. / 0.14 }; //< conversion factor for motor current sense in A/V
 
 MotorDriver::MotorDriver(
-    std::shared_ptr<GPIO> gpio,
+    std::shared_ptr<Gpio> gpio,
     std::shared_ptr<sysfspwm::PWM> pwm,
     Pins pins,
     bool invertDirection,
@@ -48,7 +48,7 @@ MotorDriver::MotorDriver(
         return;
     }
 
-    if (!fGpio->isInitialized()) {
+    if (!fGpio->is_initialised()) {
         std::cerr << "Error: gpio interface not initialized.\n";
         return;
     }
@@ -108,7 +108,7 @@ MotorDriver::~MotorDriver()
     if (fPwm != nullptr) {
         fPwm->set_enabled(false);
     }
-    if (fGpio != nullptr && fGpio->isInitialized()) {
+    if (fGpio != nullptr && fGpio->is_initialised()) {
         if (fPins.Dir > 0)
             fGpio->set_gpio_direction(static_cast<unsigned int>(fPins.Dir), false);
         if (fPins.DirA > 0)
@@ -203,11 +203,11 @@ void MotorDriver::resetMaxCurrent()
 
 auto MotorDriver::isFault() -> bool
 {
-    if (!isInitialized() || !fGpio->isInitialized())
+    if (!isInitialized() || !fGpio->is_initialised())
         return true;
     if (!hasFaultSense())
         return false;
-    return (fGpio->get_gpio_state(static_cast<unsigned int>(fPins.Fault), nullptr) == false);
+    return (fGpio->get_gpio_state(static_cast<unsigned int>(fPins.Fault)) == false);
 }
 
 void MotorDriver::setSpeed(float speed_ratio)
