@@ -60,12 +60,12 @@ MotorDriver::MotorDriver(
 
     // set pin directions
     if (fPins.Dir > 0) {
-        fGpio->set_gpio_direction(static_cast<unsigned int>(fPins.Dir), true);
+        fGpio->set_gpio_direction(static_cast<unsigned int>(fPins.Dir), Gpio::Direction::DIRECTION_OUTPUT);
         fGpio->set_gpio_state(static_cast<unsigned int>(fPins.Dir), (fInverted) ? !fCurrentDir : fCurrentDir);
     }
     if (hasDualDir()) {
-        fGpio->set_gpio_direction(static_cast<unsigned int>(fPins.DirA), true);
-        fGpio->set_gpio_direction(static_cast<unsigned int>(fPins.DirB), true);
+        fGpio->set_gpio_direction(static_cast<unsigned int>(fPins.DirA), Gpio::Direction::DIRECTION_OUTPUT);
+        fGpio->set_gpio_direction(static_cast<unsigned int>(fPins.DirB), Gpio::Direction::DIRECTION_OUTPUT);
         fGpio->set_gpio_state(static_cast<unsigned int>(fPins.DirA), (fInverted) ? !fCurrentDir : fCurrentDir);
         fGpio->set_gpio_state(static_cast<unsigned int>(fPins.DirB), (fInverted) ? fCurrentDir : !fCurrentDir);
     }
@@ -73,11 +73,11 @@ MotorDriver::MotorDriver(
     //fGpio->set_gpio_direction(static_cast<unsigned int>(fPins.Pwm), true);
 
     if (fPins.Enable > 0) {
-        fGpio->set_gpio_direction(static_cast<unsigned int>(fPins.Enable), true);
+        fGpio->set_gpio_direction(static_cast<unsigned int>(fPins.Enable), Gpio::Direction::DIRECTION_OUTPUT);
         fGpio->set_gpio_state(static_cast<unsigned int>(fPins.Enable), true);
     }
     if (fPins.Fault > 0) {
-        fGpio->set_gpio_direction(static_cast<unsigned int>(fPins.Fault), false);
+        fGpio->set_gpio_direction(static_cast<unsigned int>(fPins.Fault), Gpio::Direction::DIRECTION_INPUT);
         fGpio->set_gpio_pullup(static_cast<unsigned int>(fPins.Fault));
     }
 
@@ -110,14 +110,14 @@ MotorDriver::~MotorDriver()
     }
     if (fGpio != nullptr && fGpio->is_initialised()) {
         if (fPins.Dir > 0)
-            fGpio->set_gpio_direction(static_cast<unsigned int>(fPins.Dir), false);
+            fGpio->set_gpio_direction(static_cast<unsigned int>(fPins.Dir), Gpio::Direction::DIRECTION_INPUT);
         if (fPins.DirA > 0)
-            fGpio->set_gpio_direction(static_cast<unsigned int>(fPins.DirA), false);
+            fGpio->set_gpio_direction(static_cast<unsigned int>(fPins.DirA), Gpio::Direction::DIRECTION_INPUT);
         if (fPins.DirB > 0)
-            fGpio->set_gpio_direction(static_cast<unsigned int>(fPins.DirB), false);
+            fGpio->set_gpio_direction(static_cast<unsigned int>(fPins.DirB), Gpio::Direction::DIRECTION_INPUT);
         //fGpio->set_gpio_direction(static_cast<unsigned int>(fPins.Pwm), false);
         if (fPins.Enable > 0) {
-            fGpio->set_gpio_direction(static_cast<unsigned int>(fPins.Enable), false);
+            fGpio->set_gpio_direction(static_cast<unsigned int>(fPins.Enable), Gpio::Direction::DIRECTION_INPUT);
         }
         if (fPins.Fault > 0) {
             fGpio->set_gpio_pullup(static_cast<unsigned int>(fPins.Fault), false);

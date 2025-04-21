@@ -865,13 +865,13 @@ bool PiRT::Connect()
     // set up the gpio pins for the relay switches
     IUResetSwitch(&OutputSwitchSP);
     for (unsigned int i = 0; i < GpioOutputVector.size(); i++) {
-        gpio->set_gpio_direction(GpioOutputVector[i].gpio_pin, true);
+        gpio->set_gpio_direction(GpioOutputVector[i].gpio_pin, PiRaTe::Gpio::Direction::DIRECTION_OUTPUT);
         gpio->set_gpio_state(GpioOutputVector[i].gpio_pin, GpioOutputVector[i].inverted);
     }
 
     // set up the gpio pins for the digital inputs
     for (unsigned int i = 0; i < GpioInputVector.size(); i++) {
-        gpio->set_gpio_direction(GpioInputVector[i].gpio_pin, false);
+        gpio->set_gpio_direction(GpioInputVector[i].gpio_pin, PiRaTe::Gpio::Direction::DIRECTION_INPUT);
     }
 
     INDI::Telescope::Connect();

@@ -30,6 +30,7 @@ constexpr char DEFAULT_GPIO_DEVPATH[] { "/dev/gpiochip0" };
  */
 class Gpio {
 public:
+    typedef int direction_t;
     struct Direction : private gpiod::line {
     public:
         using gpiod::line::DIRECTION_INPUT;
@@ -78,7 +79,7 @@ public:
     void setInhibited(bool inh = true) { inhibit = inh; }
     void set_event_callback(event_callback_t cb) { fEventCallback = cb; }
     
-    auto set_gpio_direction(unsigned int gpio_pin, bool output) -> bool;
+    auto set_gpio_direction(unsigned int gpio_pin, direction_t direction) -> bool;
     auto set_gpio_state(unsigned int gpio_pin, bool state) -> bool;
     auto get_gpio_state(unsigned int gpio_pin) -> bool;
     auto set_gpio_pullup(unsigned int gpio_pin, bool pullup_enable = true) -> bool;

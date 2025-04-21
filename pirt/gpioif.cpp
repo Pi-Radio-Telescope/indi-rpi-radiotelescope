@@ -205,9 +205,9 @@ bool Gpio::getPinState(unsigned int gpio)
     return static_cast<bool>(fLineMap[gpio].get_value());
 }
 
-auto Gpio::set_gpio_direction(unsigned int gpio_pin, bool output) -> bool
+auto Gpio::set_gpio_direction(unsigned int gpio_pin, direction_t direction) -> bool
 {
-    if (output) return setPinOutput(gpio_pin, 0);
+    if (direction == Direction::DIRECTION_OUTPUT) return setPinOutput(gpio_pin, 0);
     else return setPinInput(gpio_pin);
 }
 
