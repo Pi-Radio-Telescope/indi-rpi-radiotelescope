@@ -25,7 +25,8 @@ constexpr char DEFAULT_GPIO_DEVPATH[] { "/dev/gpiochip0" };
 /**
  * @brief GPIO interface class.
  * This class encapsulates access to the Raspberry Pi GPIO interface based on the gpiod userspace kernel device /dev/gpiochipX.
- * @note 
+ * @note The gpiod access is handled through the C++ binding library of libgpiod. 
+ * Refer to https://libgpiod.readthedocs.io/en/stable/cpp_api.html
  * @author HG Zaunick
  */
 class Gpio {

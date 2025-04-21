@@ -16,7 +16,8 @@ namespace PiRaTe {
 * @note Setting the word size is possible but the RPi hardware spi interface does not support
 * word sizes other than 8 bit.
 * @note The SPI1 and SPI2 buses on RPi are known to have limited functionality, such as
-* non-functional modes 1 and 3. Refer to https://blog.stabel.family/raspberry-pi-4-multiple-spis-and-the-device-tree/
+* non-functional modes 1 and 3. Refer to https://blog.stabel.family/raspberry-pi-4-multiple-spis-and-the-device-tree/ 
+* and https://klipper.discourse.group/t/adding-several-spi-slaves-to-one-rpi-spi-bus-and-adding-several-spi-buses-to-one-rpi/5059/5
 */
 class spi_device {
 public:
@@ -29,6 +30,10 @@ public:
 
     using mode_t =  std::uint16_t;
 
+    /**
+    * @brief SPI mode flag definitions
+    * refer to https://elixir.bootlin.com/linux/v6.14.1/source/include/uapi/linux/spi/spi.h#L7
+    */ 
     enum MODE : mode_t {
         CPHA=           0x01,
         CPOL=           0x02,

@@ -175,6 +175,8 @@ auto spi_device::read(std::uint8_t* buffer, std::size_t n_bytes) -> bool
 
     memset(&spi, 0, sizeof(spi));
 
+    // for definition of spi_ioc_transfer struct refer to
+    // https://elixir.bootlin.com/linux/v6.0.19/source/include/uapi/linux/spi/spidev.h
     spi.tx_buf        = reinterpret_cast<__u64>( nullptr );
     spi.rx_buf        = reinterpret_cast<__u64>( buffer );
     spi.len           = n_bytes;
