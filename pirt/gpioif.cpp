@@ -105,8 +105,10 @@ bool Gpio::setPinInput(unsigned int gpio, std::bitset<32> flags)
 
 bool Gpio::setPinOutput(unsigned int gpio, bool initState, std::bitset<32> flags)
 {
-    if (!is_initialised())
+    if (!is_initialised()){
+        std::cerr << "Gpio::setPinOutput: chip not initialised\n";
         return false;
+    }
     auto it = fLineMap.find(gpio);
 
     if (it != fLineMap.end()) {
@@ -136,8 +138,10 @@ bool Gpio::setPinOutput(unsigned int gpio, bool initState, std::bitset<32> flags
 
 bool Gpio::setPinBias(unsigned int gpio, std::bitset<32> bias_flags)
 {
-    if (!is_initialised())
+    if (!is_initialised()) {
+        std::cerr << "Gpio::setPinBias: gpiochip not initialised\n";
         return false;
+    }
 
     auto it = fLineMap.find(gpio);
     if (it != fLineMap.end()) {
@@ -186,8 +190,10 @@ bool Gpio::setPinState(unsigned int gpio, bool state)
 
 bool Gpio::getPinState(unsigned int gpio)
 {
-    if (!is_initialised())
+    if (!is_initialised()) {
+        std::cerr << "Gpio::getPinState: gpiochip not initialised\n";
         return false;
+    }
     auto it = fLineMap.find(gpio);
     if (it != fLineMap.end()) {
         // line object exists, look if it is an input
