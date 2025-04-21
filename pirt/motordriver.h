@@ -119,7 +119,6 @@ private:
     bool fCurrentDir { false };
     bool fInverted { false };
     std::uint8_t fAdcChannel { 0 };
-    //double fVoltageOffset { 0. };
     double fCurrent { 0. };
     double fMaxCurrent { 0. };
 

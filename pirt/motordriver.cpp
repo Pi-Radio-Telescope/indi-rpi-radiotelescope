@@ -19,8 +19,6 @@ constexpr std::chrono::milliseconds loop_delay { 10 };
 constexpr std::chrono::milliseconds ramp_time { 100 };
 constexpr std::size_t adc_measurement_rate_loop_cycles { 10 };
 constexpr double ramp_increment { static_cast<double>(loop_delay.count()) / ramp_time.count() };
-// constexpr unsigned int HW_PWM1_PIN { 12 };
-// constexpr unsigned int HW_PWM2_PIN { 13 };
 constexpr double MOTOR_CURRENT_FACTOR { 1. / 0.14 }; //< conversion factor for motor current sense in A/V
 
 MotorDriver::MotorDriver(
@@ -70,8 +68,6 @@ MotorDriver::MotorDriver(
         fGpio->set_gpio_state(static_cast<unsigned int>(fPins.DirB), (fInverted) ? fCurrentDir : !fCurrentDir);
     }
 
-    //fGpio->set_gpio_direction(static_cast<unsigned int>(fPins.Pwm), true);
-
     if (fPins.Enable > 0) {
         fGpio->set_gpio_direction(static_cast<unsigned int>(fPins.Enable), Gpio::Direction::DIRECTION_OUTPUT);
         fGpio->set_gpio_state(static_cast<unsigned int>(fPins.Enable), true);
@@ -92,10 +88,10 @@ MotorDriver::MotorDriver(
 
     fActiveLoop = true;
     // since C++14 using std::make_unique
-    // fThread = std::make_unique<std::thread>( [this]() { this->readLoop(); } );
-    // C++11 is unfortunately more unconvenient with move from a locally generated pointer
-    std::unique_ptr<std::thread> thread(new std::thread([this]() { this->threadLoop(); }));
-    fThread = std::move(thread);
+     fThread = std::make_unique<std::thread>( [this]() { this->threadLoop(); } );
+    // C++11 is unfortunately more inconvenient with move from a locally generated pointer
+//     std::unique_ptr<std::thread> thread(new std::thread([this]() { this->threadLoop(); }));
+//     fThread = std::move(thread);
 }
 
 MotorDriver::~MotorDriver()
@@ -115,7 +111,6 @@ MotorDriver::~MotorDriver()
             fGpio->set_gpio_direction(static_cast<unsigned int>(fPins.DirA), Gpio::Direction::DIRECTION_INPUT);
         if (fPins.DirB > 0)
             fGpio->set_gpio_direction(static_cast<unsigned int>(fPins.DirB), Gpio::Direction::DIRECTION_INPUT);
-        //fGpio->set_gpio_direction(static_cast<unsigned int>(fPins.Pwm), false);
         if (fPins.Enable > 0) {
             fGpio->set_gpio_direction(static_cast<unsigned int>(fPins.Enable), Gpio::Direction::DIRECTION_INPUT);
         }

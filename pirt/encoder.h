@@ -80,7 +80,6 @@ private:
     [[nodiscard]] auto gray_decode(std::uint32_t g) -> std::uint32_t;
     [[nodiscard]] auto intToBinaryString(unsigned long number) -> std::string;
 
-    //int fSpiHandle { -1 };
     std::uint8_t fStBits { 12 };
     std::uint8_t fMtBits { 12 };
     unsigned int fPos { 0 };

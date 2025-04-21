@@ -51,12 +51,12 @@ SsiPosEncoder::SsiPosEncoder(const std::string& spidev_path, unsigned int baudra
 
     fActiveLoop = true;
     // since C++14 using std::make_unique
-    // fThread = std::make_unique<std::thread>( [this]() { this->readLoop(); } );
+    fThread = std::make_unique<std::thread>( [this]() { this->readLoop(); } );
     // C++11 is unfortunately more unconvenient with move from a locally generated pointer
-    //std::unique_ptr<std::thread> thread( new std::thread( [this]() { this->readLoop(); } ));
-    //fThread = std::move(thread);
+//     std::unique_ptr<std::thread> thread( new std::thread( [this]() { this->readLoop(); } ));
+//     fThread = std::move(thread);
     // or with the reset method of smart pointers
-    fThread.reset(new std::thread([this]() { this->readLoop(); }));
+//     fThread.reset(new std::thread([this]() { this->readLoop(); }));
     fNrInstances++;
 }
 
