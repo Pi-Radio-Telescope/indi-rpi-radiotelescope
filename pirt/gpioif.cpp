@@ -77,9 +77,7 @@ bool Gpio::setPinInput(unsigned int gpio, std::bitset<32> flags)
 
     if (it != fLineMap.end()) {
         // line object exists, request for input
-//         std::cerr << "Gpio::setPinInput: line " << gpio << " found in fLineMap\n";
         it->second.set_direction_input();
-//         std::cerr << "Gpio::setPinInput: flags " << flags << "\n";
         it->second.set_flags(flags);
         return true;
     }
@@ -97,7 +95,6 @@ bool Gpio::setPinInput(unsigned int gpio, std::bitset<32> flags)
         gpiod::line_request::DIRECTION_INPUT,
         flags
     });
-//     std::cerr << "Gpio::setPinInput: requested line " << gpio << " direction=" << gpiod::line_request::DIRECTION_INPUT << "\n";
     
     fLineMap.emplace(std::make_pair(gpio, std::move(line)));
     return true;
@@ -131,7 +128,6 @@ bool Gpio::setPinOutput(unsigned int gpio, bool initState, std::bitset<32> flags
         gpiod::line_request::DIRECTION_OUTPUT,
         flags
     });
-//     std::cerr << "Gpio::setPinOutput: requested line " << gpio << " direction=" << gpiod::line_request::DIRECTION_OUTPUT << "\n";
     fLineMap.emplace(std::make_pair(gpio, std::move(line)));
     return true;
 }
@@ -147,9 +143,6 @@ bool Gpio::setPinBias(unsigned int gpio, std::bitset<32> bias_flags)
     if (it != fLineMap.end()) {
         // line object exists, set config
         it->second.set_flags(bias_flags);
-//         dir = gpiod_line_direction(it->second);
-//         gpiod_line_release(it->second);
-//         fLineMap.erase(it);
         return true;
     }
     // line was not allocated yet, so do it now
