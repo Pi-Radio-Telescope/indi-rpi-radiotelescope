@@ -282,6 +282,13 @@ def onPollMQTT(client, userdata, message):
 		elif msg[1] == "1":
 			switch[0].s = PyIndi.ISS_ON
 		indiclient.sendNewSwitch(switch)
+	elif msg[0] == "rt_gpio1":
+		switch = indiclient.getDevice("Pi Radiotelescope").getSwitch("GPIO_OUTPUTS")
+		if msg[1] == "0":
+			switch[1].s = PyIndi.ISS_OFF
+		elif msg[1] == "1":
+			switch[1].s = PyIndi.ISS_ON
+		indiclient.sendNewSwitch(switch)
 	elif msg[0] == "weather_override":
 		switch = indiclient.getDevice("Weather Watcher").getSwitch("WEATHER_OVERRIDE")
 		if msg[1] == "0":
