@@ -108,11 +108,12 @@ struct GpioPin {
 const std::vector<GpioPin> GpioOutputVector { { "Relay1", 17, true },
     { "Relay2", 27, true },
     { "Relay3", 22, true },
-    { "Relay4", 16, true } };
+    { "Relay4", 16, true },
+    { "RefOut (BCM0)", 0, false }
+};
 
 const std::vector<GpioPin> GpioInputVector { { "In1 (BCM8)", 8, false },
     { "In2 (BCM7)", 7, false },
-    { "In3 (BCM0)", 0, false },
     { "In4 (BCM20)", 20, false },
     { "In5 (BCM1)", 1, false } };
 
