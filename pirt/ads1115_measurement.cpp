@@ -14,7 +14,7 @@
 
 namespace PiRaTe {
 
-constexpr std::chrono::microseconds loop_delay { 10000L };
+constexpr std::chrono::microseconds loop_delay { 10'000L };
 
 Ads1115Measurement::Ads1115Measurement(std::string name,
     std::shared_ptr<ADS1115> adc,
