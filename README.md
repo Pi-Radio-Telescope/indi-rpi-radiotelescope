@@ -54,8 +54,8 @@ dtoverlay=pwm-2chan,pin=12,func=4,pin2=13,func2=4
 ## Activate and Start PiRaTe
 Now activate the driver and ratsche via systemd services:
 
-    sudo systemctl enable indiserver.service && sudo systemctl start indiserver.service
-    sudo systemctl enable ratsche.service && sudo systemctl start ratsche.service
+    sudo systemctl enable --now indiserver.service
+    sudo systemctl enable --now ratsche.service
 
 These steps have to be executed only once. The indi driver as well as the task scheduler should now be running which may be checked by:
 
