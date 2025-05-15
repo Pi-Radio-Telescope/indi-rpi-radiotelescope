@@ -1,5 +1,4 @@
-#ifndef VOLTAGEMONITOR_H
-#define VOLTAGEMONITOR_H
+#pragma once
 
 #include <chrono>
 #include <functional>
@@ -18,9 +17,9 @@
 #include "gpioif.h"
 #include "utility.h"
 
-class ADS1115;
-
 namespace PiRaTe {
+
+class ADS1115;
 
 class Ads1115VoltageMonitor {
 public:
@@ -72,5 +71,3 @@ private:
 };
 
 } // namespace PiRaTe
-
-#endif // #ifdef VOLTAGEMONITOR_H

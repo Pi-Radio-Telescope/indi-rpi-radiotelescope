@@ -1,4 +1,6 @@
 #include "ads1115.h"
+
+namespace PiRaTe {
 /*
 * ADS1115 4ch 16 bit ADC
 */
@@ -196,3 +198,5 @@ void ADS1115::readVoltage(unsigned int channel, int16_t& adc, double& voltage)
     fLastVoltage = voltage;
     return;
 }
+
+} // namespace PiRaTe

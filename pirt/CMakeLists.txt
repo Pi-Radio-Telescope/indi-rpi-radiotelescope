@@ -1,27 +1,32 @@
 # define the project name
 project(indi-pirt C CXX)
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 3.14)
 
 include(GNUInstallDirs)
+#include(FetchContent)
+
+ADD_DEFINITIONS(-std=gnu++17)
+ADD_DEFINITIONS(-Wall)
+ADD_DEFINITIONS(-Wno-psabi)
 
 # add our cmake_modules folder
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake_modules/")
 
 # find our required packages
+find_package(PkgConfig REQUIRED)
 find_package(INDI REQUIRED)
 find_package(Nova REQUIRED)
 find_package(ZLIB REQUIRED)
 find_package(GSL REQUIRED)
-#find_library(LIBGPIOD gpiod REQUIRED)
-find_library(PIGPIOD_IF2 pigpiod_if2 REQUIRED)
+find_library(GPIODCXX gpiodcxx REQUIRED)
 find_library(RT rt REQUIRED)
 
-#reminder what we installed to get everything running:
-# pigpiod libpigpio-dev libpigpiod-if-dev
+# Ensure the public interface header is visible
+#target_include_directories(sysfspwm PUBLIC ${sysfspwm_SOURCE_DIR}/include)
 
 # these will be used to set the version number in config.h and our driver's xml file
 set(CDRIVER_VERSION_MAJOR 0)
-set(CDRIVER_VERSION_MINOR 2)
+set(CDRIVER_VERSION_MINOR 3)
 
 # do the replacement in the config.h
 configure_file(
@@ -55,6 +60,7 @@ set(SOURCE_FILES
     "${CMAKE_CURRENT_SOURCE_DIR}/voltage_monitor.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/ads1115_measurement.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/pirt.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/spidevice.cpp"
 )
 
 set(HEADER_FILES
@@ -69,6 +75,7 @@ set(HEADER_FILES
     "${CMAKE_CURRENT_SOURCE_DIR}/ads1115_measurement.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/pirt.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/utility.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/spidevice.h"
 )
 
 set(PIRT_SOURCE_FILES
@@ -87,13 +94,14 @@ add_executable(
 	${SOURCE_FILES}
 )
 
+add_dependencies(indi_pirt udevpp sysfspwm)
+
 add_executable(
     encodertest
 	encodertest.cpp
-	gpioif.cpp
+	spidevice.cpp
 	encoder.cpp
 )
-
 
 # and link it to these libraries
 target_link_libraries(
@@ -101,14 +109,15 @@ target_link_libraries(
     ${INDI_LIBRARIES}
     ${NOVA_LIBRARIES}
     ${GSL_LIBRARIES}
-    pigpiod_if2
     rt
     pthread
+    udevpp
+    sysfspwm
+    gpiodcxx
 )
 
 target_link_libraries(
     encodertest
-    pigpiod_if2
     rt
     pthread
 )

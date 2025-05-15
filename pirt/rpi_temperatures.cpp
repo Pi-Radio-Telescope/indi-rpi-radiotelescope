@@ -23,10 +23,10 @@ RpiTemperatureMonitor::RpiTemperatureMonitor(const std::string device_path)
     //rescanSources();
     fActiveLoop = true;
     // since C++14 using std::make_unique
-    // fThread = std::make_unique<std::thread>( [this]() { this->readLoop(); } );
+    fThread = std::make_unique<std::thread>( [this]() { this->threadLoop(); } );
     // C++11 is unfortunately more unconvenient with move from a locally generated pointer
-    std::unique_ptr<std::thread> thread(new std::thread([this]() { this->threadLoop(); }));
-    fThread = std::move(thread);
+//     std::unique_ptr<std::thread> thread(new std::thread([this]() { this->threadLoop(); }));
+//     fThread = std::move(thread);
 }
 
 RpiTemperatureMonitor::~RpiTemperatureMonitor()

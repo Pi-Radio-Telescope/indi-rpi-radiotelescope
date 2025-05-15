@@ -1,5 +1,4 @@
-#ifndef MEASUREMENT_H
-#define MEASUREMENT_H
+#pragma once
 
 #include <chrono>
 #include <functional>
@@ -18,9 +17,9 @@
 #include "gpioif.h"
 #include "utility.h"
 
-class ADS1115;
-
 namespace PiRaTe {
+
+class ADS1115;
 
 class Ads1115Measurement {
 public:
@@ -73,5 +72,3 @@ private:
 };
 
 } // namespace PiRaTe
-
-#endif // #ifdef MEASUREMENT_H

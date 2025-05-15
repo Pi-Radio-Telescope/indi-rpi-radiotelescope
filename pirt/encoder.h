@@ -1,5 +1,4 @@
-#ifndef ENCODERSRT_H
-#define ENCODERSRT_H
+#pragma once
 
 #include <inttypes.h> // uint8_t, etc
 #include <iomanip>
@@ -13,11 +12,11 @@
 #include <utility>
 #include <vector>
 
-#include "gpioif.h"
+#include "spidevice.h"
 
 namespace PiRaTe {
 
-constexpr unsigned int SPI_BAUD_DEFAULT { 500000U };
+constexpr unsigned int SPI_BAUD_DEFAULT { 500'000U };
 constexpr unsigned int MAX_CONN_ERRORS { 10U };
 
 /**
@@ -25,6 +24,15 @@ constexpr unsigned int MAX_CONN_ERRORS { 10U };
  * This class manages the read-out of absolute position encoders connected to the SPI interface.
  * The interface to be utilized is set in the constructor call together with baud rate and SPI mode settings. 
  * The absolute position is obtained with {@link SsiPosEncoder::absolutePosition} with the return value in evolutions.
+* @note In order to use two SPI channnels on RPi4 for the encoder connections of both axes
+* following steps are required in preparation:
+* * configure the boot overlay with:
+*  * dtparam=spi=off
+*  * dtoverlay=spi0-cs,cs0_pin=46,cs1_pin=47
+*  * dtoverlay=spi6-1cs,cs0_pin=48
+* * Instantiate the two encoders with the spidev paths /dev/spidev0.0 and /dev/spidev6.0
+* * The encoders i tested work in SPI mode 3 only (CPHA=1 and CPOL=1), 
+*   so make sure the spi_mode param is set accordingly
  * @note The class launches a separate thread loop upon successfull construction which reads the encoder's data word every 10 ms.
  * @author HG Zaunick
  */
@@ -32,23 +40,19 @@ class SsiPosEncoder {
 public:
     SsiPosEncoder() = delete;
     /**
-	 * @brief The main constructor.
-	 * Initializes an object with the given gpio object pointer and SPI parameters.
-	 * @param gpio shared pointer to an initialized GPIO object
-	 * @param GPIO::SPI_INTERFACE the SPI interface to use (GPIO::SPI_INTERFACE::Main or GPIO::SPI_INTERFACE:Aux)
-	 * @param baudrate the bitrate which the SPI interface should be initialized for
-	 * @param spi_channel the SPI channel to use (which CEx pin is assigned to this SPI device)
-	 * @param GPIO::SPI_MODE the SPI mode to use (GPIO::SPI_MODE::POL0PHA0, GPIO::SPI_MODE::POL0PHA1, GPIO::SPI_MODE::POL1PHA0 or GPIO::SPI_MODE::POL1PHA1)
-	 * @throws std::exception if the supplied gpio object is not initialized or the initialization of the SPI channel fails
-	 */
-    SsiPosEncoder(std::shared_ptr<GPIO> gpio,
-        GPIO::SPI_INTERFACE spi_interface,
+    * @brief The main constructor.
+    * Initializes an object with the given gpio object pointer and SPI parameters.
+    * @param spidev_path path to spidev device, e.g. "/dev/spidev0.0
+    * @param baudrate the bitrate which the SPI interface should be initialized for
+    * @param spi_mode the SPI mode to use (spi_device::MODE::MODE0 etc.)
+    * @throws std::exception if the initialization of the SPI channel fails
+    */
+    SsiPosEncoder(const std::string& spidev_path,
         unsigned int baudrate = SPI_BAUD_DEFAULT,
-        std::uint8_t spi_channel = 0,
-        GPIO::SPI_MODE spi_mode = GPIO::SPI_MODE::POL1PHA1);
+        spi_device::mode_t spi_mode = spi_device::MODE::MODE3);
     ~SsiPosEncoder();
 
-    [[nodiscard]] auto isInitialized() const -> bool { return (fSpiHandle >= 0); }
+    [[nodiscard]] auto isInitialized() const -> bool { return (fSpi && fSpi->is_open()); }
 
     [[nodiscard]] auto position() -> unsigned int
     {
@@ -76,7 +80,6 @@ private:
     [[nodiscard]] auto gray_decode(std::uint32_t g) -> std::uint32_t;
     [[nodiscard]] auto intToBinaryString(unsigned long number) -> std::string;
 
-    int fSpiHandle { -1 };
     std::uint8_t fStBits { 12 };
     std::uint8_t fMtBits { 12 };
     unsigned int fPos { 0 };
@@ -93,11 +96,9 @@ private:
 
     static unsigned int fNrInstances;
     std::unique_ptr<std::thread> fThread { nullptr };
-    std::shared_ptr<GPIO> fGpio { nullptr };
+    std::unique_ptr<spi_device> fSpi { nullptr };
 
     std::mutex fMutex;
 };
 
 } // namespace PiRaTe
-
-#endif

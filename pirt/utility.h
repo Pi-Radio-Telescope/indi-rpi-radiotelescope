@@ -1,5 +1,4 @@
-#ifndef UTILITY_H
-#define UTILITY_H
+#pragma once
 
 #include <algorithm>
 #include <array>
@@ -93,5 +92,3 @@ auto Ringbuffer<T, N>::entries() const -> std::size_t
 // -------------------------------
 
 } // namespace PiRaTe
-
-#endif // #define UTILITY_H

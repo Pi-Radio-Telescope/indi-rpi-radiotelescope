@@ -1,8 +1,9 @@
-#ifndef _ADS1115_H_
-#define _ADS1115_H_
+#pragma once
 
 #include "i2cdevice.h"
 #include <mutex>
+
+namespace PiRaTe {
 
 // ADC ADS1x13/4/5 sampling readout delay
 #define READ_WAIT_DELAY_INIT 10
@@ -108,4 +109,4 @@ protected:
 //     }
 };
 
-#endif // !_ADS1115_H_
+} // namespace PiRaTe

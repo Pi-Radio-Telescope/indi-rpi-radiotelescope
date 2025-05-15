@@ -1,3 +1,5 @@
+#pragma once
+
 #include "linux/i2c-dev.h" // I2C bus definitions for linux like systems
 #include <fcntl.h> // open
 #include <inttypes.h> // uint8_t, etc
@@ -9,10 +11,9 @@
 #include <unistd.h>
 #include <vector>
 
-#ifndef _I2CDEVICE_H_
-#define _I2CDEVICE_H_
-
 #define DEFAULT_DEBUG_LEVEL 0
+
+namespace PiRaTe {
 
 /**
  * @brief I2C interface unix linux kernel character device access.
@@ -198,4 +199,4 @@ protected:
     void stopTimer();
 };
 
-#endif // _I2CDEVICE_H_
+} // namespace PiRaTe

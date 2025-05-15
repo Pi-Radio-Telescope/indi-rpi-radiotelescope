@@ -4,6 +4,8 @@
 #include <fcntl.h> // open
 #include <iostream>
 
+namespace PiRaTe {
+
 using namespace std;
 
 unsigned int i2cDevice::fNrDevices = 0;
@@ -369,3 +371,5 @@ void i2cDevice::stopTimer()
     if (fDebugLevel > 1)
         printf(" last transaction took: %6.2f ms\n", fLastTimeInterval);
 }
+
+} // namespace PiRaTe

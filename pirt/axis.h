@@ -1,5 +1,4 @@
-#ifndef AXISRT_H
-#define AXISRT_H
+#pragma once
 
 #include <cmath>
 #include <functional>
@@ -91,5 +90,3 @@ private:
 };
 
 } // namespace PiRaTe
-
-#endif

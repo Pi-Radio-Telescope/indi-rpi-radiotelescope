@@ -21,8 +21,6 @@
 
 #include <map>
 
-class i2cDevice;
-
 struct HorCoords {
     HorCoords()
     {
@@ -53,13 +51,15 @@ struct EquCoords {
     PiRaTe::RotAxis Dec { -90., 90., 360. };
 };
 
-class GPIO;
+
 namespace PiRaTe {
-class SsiPosEncoder;
-class MotorDriver;
-//class RpiTemperatureMonitor;
+    class Gpio;
+    class SsiPosEncoder;
+    class MotorDriver;
+    class i2cDevice;
+    class ADS1115;
 }
-class ADS1115;
+
 
 class PiRT : public INDI::Telescope {
 public:
@@ -190,12 +190,12 @@ private:
     IPState lastHorState;
     uint8_t DBG_SCOPE { INDI::Logger::DBG_IGNORE };
 
-    std::shared_ptr<GPIO> gpio { nullptr };
+    std::shared_ptr<PiRaTe::Gpio> gpio { nullptr };
     std::unique_ptr<PiRaTe::SsiPosEncoder> az_encoder { nullptr };
     std::unique_ptr<PiRaTe::SsiPosEncoder> el_encoder { nullptr };
     std::unique_ptr<PiRaTe::MotorDriver> az_motor { nullptr };
     std::unique_ptr<PiRaTe::MotorDriver> el_motor { nullptr };
-    std::map<std::uint8_t, std::shared_ptr<i2cDevice>> i2cDeviceMap {};
+    std::map<std::uint8_t, std::shared_ptr<PiRaTe::i2cDevice>> i2cDeviceMap {};
     std::shared_ptr<PiRaTe::RpiTemperatureMonitor> tempMonitor { nullptr };
     HorCoords currentHorizontalCoords { 0., 90. };
     HorCoords targetHorizontalCoords { 0., 90. };

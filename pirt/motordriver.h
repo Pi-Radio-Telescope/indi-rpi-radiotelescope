@@ -1,5 +1,4 @@
-#ifndef MOTORDRIVERRT_H
-#define MOTORDRIVERRT_H
+#pragma once
 
 #include <chrono>
 #include <inttypes.h> // uint8_t, etc
@@ -15,14 +14,16 @@
 #include <vector>
 
 #include "gpioif.h"
+#include "sysfspwm.hpp"
 #include "utility.h"
 
-class GPIO;
-class ADS1115;
+class Gpio;
 
 namespace PiRaTe {
 
-constexpr unsigned int DEFAULT_PWM_FREQ { 20000 };
+class ADS1115;
+
+constexpr unsigned int DEFAULT_PWM_FREQ { 20'000 };
 constexpr unsigned int OFFSET_RINGBUFFER_DEPTH { 16 };
 
 /**
@@ -37,7 +38,9 @@ constexpr unsigned int OFFSET_RINGBUFFER_DEPTH { 16 };
  * measured, a shared pointer to an instance of an {@link ADS1115} class can be provided additionally in the constructor.
  * It is assumed, that the motor driver's current-supervision signal is connected to one input channel of the ADC.
  * Specify the corresponding ADS1115 channel in the constructor in this case.
- * @note none
+ * @note In order to use the hardware pwm interface, the sysfs entries have to be created first by
+ * enabling the pwm-2chan overlay in /boot/config.txt with the following entry:
+ * @verbatim dtoverlay=pwm-2chan,pin=12,func=4,pin2=13,func2=4 @endverbatim
  * @author HG Zaunick
  */
 class MotorDriver {
@@ -48,7 +51,7 @@ public:
 	* @note Unused pins must be set to -1.
 	*/
     struct Pins {
-        int Pwm; ///< GPIO pin of the PWM signal (output)
+        //int Pwm; ///< GPIO pin of the PWM signal (output)
         int Dir; ///< GPIO pin of the direction signal (output). This field must be defined, when only one direction signal is used
         int DirA; ///< GPIO pin of the direction signal (output, normal polarity). Use this field together with the DirB pin when two phase shifted signals are used for the direction
         int DirB; ///< GPIO pin of the direction signal (output, inverted polarity). Use this field together with the DirA pin when two phase shifted signals are used for the direction
@@ -59,15 +62,20 @@ public:
     MotorDriver() = delete;
     /**
 	* @brief The main constructor.
-	* Initializes an object with the given gpio object pointer and gpio pin configuration.
+	* Initializes an object with the given gpio and pwm object pointers
+    * and the gpio pin configuration.
 	* @param gpio shared pointer to an initialized GPIO object
+	* @param pwm shared pointer to a PWM object (must be already exported)
 	* @param invertDirection flag which indicates, that positive/negative direction will be swapped
 	* @param adc shared_ptr object to an initialized instance of {@link ADS1115} ADC (not mandatory)
-	* @param adc_channel channel to use for supervision of motor current, when adc is specified
-	* @throws std::exception if the supplied gpio object is not initialized
+	* @param adc_channel channel to use for supervision of motor current in case an adc is specified
+	* @throws std::exception if the supplied gpio or pwm objects are not initialized
 	*/
 
-    MotorDriver(std::shared_ptr<GPIO> gpio, Pins pins,
+    MotorDriver(
+        std::shared_ptr<Gpio> gpio,
+        std::shared_ptr<sysfspwm::PWM> pwm,
+        Pins pins,
         bool invertDirection = false,
         std::shared_ptr<ADS1115> adc = nullptr,
         std::uint8_t adc_channel = 0);
@@ -99,11 +107,11 @@ private:
     void setSpeed(float speed_ratio);
     void measureVoltageOffset();
 
-    std::shared_ptr<GPIO> fGpio { nullptr };
+    std::shared_ptr<Gpio> fGpio { nullptr };
+    std::shared_ptr<sysfspwm::PWM> fPwm { nullptr };
     Pins fPins;
     std::shared_ptr<ADS1115> fAdc { nullptr };
     unsigned int fPwmFreq { DEFAULT_PWM_FREQ };
-    unsigned int fPwmRange { 255 };
     bool fUpdated { false };
     float fCurrentDutyCycle { 0. };
     float fTargetDutyCycle { 0. };
@@ -111,7 +119,6 @@ private:
     bool fCurrentDir { false };
     bool fInverted { false };
     std::uint8_t fAdcChannel { 0 };
-    //double fVoltageOffset { 0. };
     double fCurrent { 0. };
     double fMaxCurrent { 0. };
 
@@ -123,5 +130,3 @@ private:
 };
 
 } // namespace PiRaTe
-
-#endif

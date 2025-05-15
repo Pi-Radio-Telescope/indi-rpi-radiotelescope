@@ -40,10 +40,10 @@ Ads1115VoltageMonitor::Ads1115VoltageMonitor(std::string name,
     fHiLimit = fNominalVoltage + max_abs_tolerance;
     fActiveLoop = true;
     // since C++14 using std::make_unique
-    // fThread = std::make_unique<std::thread>( [this]() { this->readLoop(); } );
+    fThread = std::make_unique<std::thread>( [this]() { this->threadLoop(); } );
     // C++11 is unfortunately more unconvenient with move from a locally generated pointer
-    std::unique_ptr<std::thread> thread(new std::thread([this]() { this->threadLoop(); }));
-    fThread = std::move(thread);
+//     std::unique_ptr<std::thread> thread(new std::thread([this]() { this->threadLoop(); }));
+//     fThread = std::move(thread);
 }
 
 Ads1115VoltageMonitor::~Ads1115VoltageMonitor()
@@ -64,7 +64,6 @@ void Ads1115VoltageMonitor::threadLoop()
 
         if (hasAdc()) {
             if ([[maybe_unused]] bool readout_guard = true) {
-                //std::lock_guard<std::mutex> lock(fMutex);
                 // read current voltage from adc
                 fMutex.lock();
                 fVoltage = fAdc->readVoltage(fAdcChannel) * fDividerRatio;
