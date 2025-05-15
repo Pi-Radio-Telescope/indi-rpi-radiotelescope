@@ -13,8 +13,11 @@
 #include <atomic>
 #include <iomanip>
 
-#include "gpioif.h"
+#include "spidevice.h"
 #include "encoder.h"
+
+constexpr char az_spidev_path[] { "/dev/spidev0.0" };
+constexpr char alt_spidev_path[] { "/dev/spidev6.0" };
 
 constexpr unsigned int CE0 { 8 };
 constexpr unsigned int CE1 { 18 };
@@ -23,7 +26,7 @@ constexpr unsigned int CLK2 { 21 };
 constexpr unsigned int DATA1 { 9 };
 constexpr unsigned int DATA2 { 19 };
 
-constexpr unsigned int baud_rate { 250000 };
+constexpr unsigned int spi_clock_rate { 1'000'000 };
 
 std::string intToBinaryString(unsigned long number) {
    std::string numStr { };
@@ -36,19 +39,9 @@ std::string intToBinaryString(unsigned long number) {
 std::atomic<bool> stop { false };
 
 int main(void) {
-    std::shared_ptr<GPIO> gpio(new GPIO("localhost"));
-	
-	if (!gpio->isInitialized()) {
-        std::cerr<<"Could not connect to pigpio daemon. Is pigpiod running?\n";
-        return -1;
-    }
 
-//	gpio->set_gpio_direction(CLK1, true);
-//	gpio->set_gpio_direction(CLK2, true);
-	PiRaTe::SsiPosEncoder az_encoder(gpio, GPIO::SPI_INTERFACE::Main, baud_rate);
-	PiRaTe::SsiPosEncoder el_encoder(gpio, GPIO::SPI_INTERFACE::Aux, baud_rate);
-	//gpio->set_gpio_pullup(DATA1);
-	//gpio->set_gpio_pullup(DATA2);
+    PiRaTe::SsiPosEncoder az_encoder(std::string(az_spidev_path), spi_clock_rate, PiRaTe::spi_device::MODE::MODE3);
+	PiRaTe::SsiPosEncoder el_encoder(std::string(alt_spidev_path), spi_clock_rate, PiRaTe::spi_device::MODE::MODE3);
 	el_encoder.setStBitWidth(13);
 	
 	std::thread thr( [&]() {    
@@ -81,46 +74,5 @@ int main(void) {
 	thr.join();
 	
 	return EXIT_SUCCESS;
-	
-/*
-	int nIter = 100;
-	while (nIter > 0) {
-		if (az_encoder.isUpdated() || el_encoder.isUpdated() ) {
-			unsigned int pos = az_encoder.position();
-			int turns = az_encoder.nrTurns();
-			std::cout<<"Az: st="<<pos<<" mt="<<turns;
-			pos = el_encoder.position();
-			turns = el_encoder.nrTurns();
-			std::cout<<"  El: st="<<pos<<" mt="<<turns<<"\n";
-			nIter--;
-		}
-		usleep(1000U);
-	}	
-*/
-	
-	
-/*
-	int spi1_handle = gpio->spi_init(GPIO::SPI_INTERFACE::Main, 0, GPIO::SPI_MODE::POL1PHA1, baud_rate);
-	if (spi1_handle < 0) {
-		std::cerr<<"Error opening spi interface.\n";
-		return -1;
-	}
-	
-	int nIter = 10;
-	while (nIter-- > 0) {
-		std::vector<std::uint8_t> data = gpio->spi_read(spi1_handle, 4);
-
-		if (data.size() != 4) {
-			std::cout<<"error reading correct number of bytes from spi.\n";
-			return -1;
-		}
-	
-		unsigned long dataword = data[3] | (data[2]<<8) | (data[1]<<16) | (data[0]<<24);
-
-		std::cout<<"Az: "<<intToBinaryString(dataword);
-	
-		std::cout<<"\n";
-	}
-*/
 }
 

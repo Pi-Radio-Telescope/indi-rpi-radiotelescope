@@ -1,0 +1,16 @@
+# File to be placed under /etc/systemd/system/
+[Unit]
+Description=RT300 INDI MQTT Bridge
+After=indiserver.service network-online.target multi-user.target
+
+[Service]
+Type=simple
+User=pi
+StandardError=null
+ExecStart=/usr/bin/python3 /usr/local/bin/rt_mqtt.py
+Restart=always
+RestartSec=5
+TimeoutSec=10
+
+[Install]
+WantedBy=multi-user.target
