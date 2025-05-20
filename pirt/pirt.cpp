@@ -12,6 +12,7 @@
 */
 
 #include "pirt.h"
+#include <connectionplugins/connectioninterface.h>
 
 #include "indicom.h"
 
@@ -702,11 +703,11 @@ bool PiRT::Connect()
 {
     fStartTime = std::chrono::system_clock::now();
 
-    ITextVectorProperty* tvp = getText("DEVICE_ADDRESS");
-    if (tvp == nullptr) {
-        DEBUG(INDI::Logger::DBG_ERROR, "No address property found.");
-        //return false;
-    }
+//     ITextVectorProperty* tvp = getText("DEVICE_ADDRESS");
+//     if (tvp == nullptr) {
+//         DEBUG(INDI::Logger::DBG_ERROR, "No address property found.");
+//         //return false;
+//     }
 
     //DEBUGF(INDI::Logger::DBG_SESSION, "host: %s:%s", tvp->tp[0].text, tvp->tp[1].text);
     /*
