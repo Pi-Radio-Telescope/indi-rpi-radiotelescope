@@ -455,16 +455,20 @@ bool PiRT::ISNewSwitch(const char* dev, const char* name, ISState* states, char*
             if (n < 0)
                 return false;
             for (int index = 0; index < n; index++) {
-                if (OutputSwitchS[index].s != states[index]) {
-                    tempstr += std::to_string(index + 1);
-                    if (states[index] == ISS_ON) {
-                        //OutputSwitchSP[relayIndex].s = IPS_OK;
-                        gpio->set_gpio_state(GpioOutputVector[index].gpio_pin, !GpioOutputVector[index].inverted);
-                        tempstr += " switch on";
-                    } else {
-                        //OutputSwitchSP[relayIndex].s = IPS_IDLE;
-                        gpio->set_gpio_state(GpioOutputVector[index].gpio_pin, GpioOutputVector[index].inverted);
-                        tempstr += " switch off";
+                ISwitch* sw = IUFindSwitch(&OutputSwitchSP, names[index]);
+                if (sw != nullptr) {
+                    std::size_t sw_pos = std::distance(OutputSwitchS, sw);
+                    if (sw->s != states[index]) {
+                        tempstr += std::to_string(index + 1);
+                        if (states[index] == ISS_ON) {
+                            //OutputSwitchSP[relayIndex].s = IPS_OK;
+                            gpio->set_gpio_state(GpioOutputVector[sw_pos].gpio_pin, !GpioOutputVector[sw_pos].inverted);
+                            tempstr += " switch on";
+                        } else {
+                            //OutputSwitchSP[relayIndex].s = IPS_IDLE;
+                            gpio->set_gpio_state(GpioOutputVector[sw_pos].gpio_pin, GpioOutputVector[sw_pos].inverted);
+                            tempstr += " switch off";
+                        }
                     }
                 }
             }
