@@ -838,14 +838,14 @@ bool PiRT::Connect()
         std::shared_ptr<PiRaTe::ADS1115> adc(std::dynamic_pointer_cast<PiRaTe::ADS1115>(it->second));
         auto mon = std::make_shared<PiRaTe::Ads1115VoltageMonitor>(item.name, std::move(adc), item.adc_channel, item.nominal, item.divider_ratio, item.nominal / 10.);
         voltageMonitors.emplace_back(std::move(mon));
-        deleteProperty(VoltageMonitorNP.name);
+//         deleteProperty(VoltageMonitorNP.name);
         IUFillNumber(&VoltageMonitorN[voltage_index], ("VOLTAGE" + std::to_string(voltage_index)).c_str(), (item.name).c_str(), "%4.2f V", item.nominal * 0.9, item.nominal * 1.1, 0, 0.);
-        IUFillNumberVector(&VoltageMonitorNP, VoltageMonitorN, voltage_index + 1, getDeviceName(), "VOLTAGE_MONITOR", "System Voltages", "Monitoring",
-            IP_RO, 60, IPS_IDLE);
-        defineProperty(&VoltageMonitorNP);
 
         voltage_index++;
     }
+    IUFillNumberVector(&VoltageMonitorNP, VoltageMonitorN, voltage_index, getDeviceName(), "VOLTAGE_MONITOR", "System Voltages", "Monitoring",
+        IP_RO, 60, IPS_IDLE);
+//     defineProperty(&VoltageMonitorNP);
 
     // set up the measurement voltages to be monitored
     voltageMeasurements.clear();
@@ -857,16 +857,16 @@ bool PiRT::Connect()
         std::shared_ptr<PiRaTe::ADS1115> adc(std::dynamic_pointer_cast<PiRaTe::ADS1115>(it->second));
         auto meas = std::make_shared<PiRaTe::Ads1115Measurement>(item.name, std::move(adc), item.adc_channel, item.divider_ratio, DEFAULT_INT_TIME);
         voltageMeasurements.emplace_back(std::move(meas));
-        deleteProperty(VoltageMeasurementNP.name);
-        deleteProperty(MeasurementIntTimeNP.name);
+//         deleteProperty(VoltageMeasurementNP.name);
+//         deleteProperty(MeasurementIntTimeNP.name);
         IUFillNumber(&VoltageMeasurementN[voltage_index], ("MEASUREMENT" + std::to_string(voltage_index)).c_str(), (item.name).c_str(), ("%4.3f " + item.unit).c_str(), 0, 0, 0, 0.);
-        IUFillNumberVector(&VoltageMeasurementNP, VoltageMeasurementN, voltage_index + 1, getDeviceName(), "MEASUREMENTS", "Measurements", "Monitoring",
-            IP_RO, 60, IPS_IDLE);
-        defineProperty(&VoltageMeasurementNP);
-        defineProperty(&MeasurementIntTimeNP);
 
         voltage_index++;
     }
+    IUFillNumberVector(&VoltageMeasurementNP, VoltageMeasurementN, voltage_index, getDeviceName(), "MEASUREMENTS", "Measurements", "Monitoring",
+        IP_RO, 60, IPS_IDLE);
+//     defineProperty(&VoltageMeasurementNP);
+//     defineProperty(&MeasurementIntTimeNP);
 
     // set up the gpio pins for the relay switches
     IUResetSwitch(&OutputSwitchSP);
