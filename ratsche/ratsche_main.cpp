@@ -27,8 +27,8 @@
 using namespace std;
 using namespace hgz;
 
-constexpr int MSQ_ID { 42 };
-constexpr unsigned long server_loop_delay_us { 20000UL };
+constexpr int DEFAULT_MSQ_ID { 99 };
+constexpr unsigned long server_loop_delay_us { 20'000UL };
 constexpr size_t MAX_MSG_LEN { 4*8192UL };
 
 const string defaultTaskFile = "/var/ratsche/ratsche_tasks";
