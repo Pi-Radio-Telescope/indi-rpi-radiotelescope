@@ -337,7 +337,7 @@ bool PiRT::initProperties()
     IUFillNumber(&VoltageMeasurementN[0], "MEASUREMENT0", "+0V", "%4.2f V", 0, 0, 0, 0);
     IUFillNumberVector(&VoltageMeasurementNP, VoltageMeasurementN, 0, getDeviceName(), "MEASUREMENTS", "Measurements", "Monitoring",
         IP_RO, 60, IPS_IDLE);
-    IUFillNumber(&MeasurementIntTimeN, "TIME", "time", "%5.2f s", 0, 0, 0, DEFAULT_INT_TIME.count() / 1000.);
+    IUFillNumber(&MeasurementIntTimeN, "TIME", "time", "%5.2f s", 0.01, 1000., 0.1, DEFAULT_INT_TIME.count() / 1000.);
     IUFillNumberVector(&MeasurementIntTimeNP, &MeasurementIntTimeN, 1, getDeviceName(), "INT_TIME", "Integration Time", "Monitoring",
         IP_RW, 60, IPS_IDLE);
 
