@@ -624,7 +624,7 @@ bool PiRT::ISNewNumber(const char* dev, const char* name, double values[], char*
                 if (nr != nullptr) {
                     std::size_t nr_pos = std::distance(MotorCurrentLimitN, nr);
                     MotorCurrentLimitN[nr_pos].value = values[index];
-                    DEBUGF(DBG_SCOPE, "Setting motor current limit of axis%1.0f to %5.3f A", nr_pos, MotorCurrentLimitN[nr_pos].value);
+                    DEBUGF(DBG_SCOPE, "Setting motor current limit of axis %d to %5.3f A", nr_pos, MotorCurrentLimitN[nr_pos].value);
                 } else {
                     success = false;
                 }
@@ -641,7 +641,7 @@ bool PiRT::ISNewNumber(const char* dev, const char* name, double values[], char*
                 if (nr != nullptr) {
                     std::size_t nr_pos = std::distance(MotorThresholdN, nr);
                     MotorThresholdN[nr_pos].value = values[index];
-                    DEBUGF(DBG_SCOPE, "Setting motor threshold of axis%1.0f to %4.0f%%", nr_pos, MotorThresholdN[nr_pos].value);
+                    DEBUGF(DBG_SCOPE, "Setting motor threshold of axis %d to %4.0f%%", nr_pos, MotorThresholdN[nr_pos].value);
                 } else {
                     success = false;
                 }
