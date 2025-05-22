@@ -36,7 +36,7 @@ const string defaultTaskFile = "/var/ratsche/ratsche_tasks";
 void Usage(const char* progname)
 {
 	cout<<"RaTSche - The Radiotelescope Task Scheduler"<<endl;
-	cout<<"v1.1 - HG Zaunick 2010-2011,2021-22"<<endl;
+	cout<<"v1.2 - HG Zaunick 2010-2011,2021-25"<<endl;
 	cout<<endl;
 	cout<<" Usage : "<<string(progname)<<"  [-vlrEdph?] -k <keyID> -e|c|s <taskID> -a <taskfile> -x|o <path>"<<endl;
 	cout<<"  command line options are:   "<<endl;
