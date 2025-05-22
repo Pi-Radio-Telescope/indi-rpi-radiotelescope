@@ -290,23 +290,42 @@ bool PiRT::initProperties()
     defineProperty(&ElEncSettingNP);
     IDSetNumber(&ElEncSettingNP, NULL);
 
-    IUFillNumber(&AzAxisSettingN[0], "AZ_AXIS_RATIO", "Enc-to-Axis turns ratio", "%5.3f", 0.0001, 100000, 0, DEFAULT_AZ_AXIS_TURNS_RATIO);
-    IUFillNumber(&AzAxisSettingN[1], "AZ_AXIS_OFFSET", "Axis Offset", "%5.4f deg", -180., 180., 0, DEFAULT_AZ_AXIS_OFFSET);
+    double initval = DEFAULT_AZ_AXIS_TURNS_RATIO;
+    if (IUGetConfigNumber(getDeviceName(), "AZ_AXIS_SETTING", "AZ_AXIS_RATIO", &initval)==0) {
+        DEBUGF(DBG_SCOPE, "Found config for AZ_AXIS_RATIO: %5.4f", initval);
+    }
+    IUFillNumber(&AzAxisSettingN[0], "AZ_AXIS_RATIO", "Enc-to-Axis turns ratio", "%5.4f", 0.0001, 100000, 0, initval);
+    axisRatio[0] = initval;
+
+    initval = DEFAULT_AZ_AXIS_OFFSET;
+    if (IUGetConfigNumber(getDeviceName(), "AZ_AXIS_SETTING", "AZ_AXIS_OFFSET", &initval)==0) {
+        DEBUGF(DBG_SCOPE, "Found config for AZ_AXIS_OFFSET: %5.4f", initval);
+    }
+    IUFillNumber(&AzAxisSettingN[1], "AZ_AXIS_OFFSET", "Axis Offset", "%5.4f deg", -180., 180., 0, initval);
+    axisOffset[0] = initval;
+
     IUFillNumberVector(&AzAxisSettingNP, AzAxisSettingN, 2, getDeviceName(), "AZ_AXIS_SETTING", "Az Axis Settings", "Axes",
         IP_RW, 60, IPS_IDLE);
     defineProperty(&AzAxisSettingNP);
     IDSetNumber(&AzAxisSettingNP, NULL);
 
-    IUFillNumber(&ElAxisSettingN[0], "EL_AXIS_RATIO", "Enc-to-Axis turns ratio", "%5.3f", 0.0001, 100000, 0, DEFAULT_EL_AXIS_TURNS_RATIO);
-    IUFillNumber(&ElAxisSettingN[1], "EL_AXIS_OFFSET", "Axis Offset", "%5.4f deg", -90., 90., 0, DEFAULT_ALT_AXIS_OFFSET);
-    IUFillNumberVector(&ElAxisSettingNP, ElAxisSettingN, 2, getDeviceName(), "El_AXIS_SETTING", "El Axis Settings", "Axes",
+    initval = DEFAULT_EL_AXIS_TURNS_RATIO;
+    if (IUGetConfigNumber(getDeviceName(), "EL_AXIS_SETTING", "EL_AXIS_RATIO", &initval)==0) {
+        DEBUGF(DBG_SCOPE, "Found config for EL_AXIS_RATIO: %5.4f", initval);
+    }
+    IUFillNumber(&ElAxisSettingN[0], "EL_AXIS_RATIO", "Enc-to-Axis turns ratio", "%5.4f", 0.0001, 100000, 0, initval);
+    axisRatio[1] = initval;
+
+    initval = DEFAULT_ALT_AXIS_OFFSET;
+    if (IUGetConfigNumber(getDeviceName(), "EL_AXIS_SETTING", "EL_AXIS_OFFSET", &initval)==0) {
+        DEBUGF(DBG_SCOPE, "Found config for EL_AXIS_OFFSET: %5.4f", initval);
+    }
+    IUFillNumber(&ElAxisSettingN[1], "EL_AXIS_OFFSET", "Axis Offset", "%5.4f deg", -90., 90., 0, initval);
+    axisOffset[1] = initval;
+    IUFillNumberVector(&ElAxisSettingNP, ElAxisSettingN, 2, getDeviceName(), "EL_AXIS_SETTING", "El Axis Settings", "Axes",
         IP_RW, 60, IPS_IDLE);
     defineProperty(&ElAxisSettingNP);
     IDSetNumber(&ElAxisSettingNP, NULL);
-    axisRatio[0] = DEFAULT_AZ_AXIS_TURNS_RATIO;
-    axisRatio[1] = DEFAULT_EL_AXIS_TURNS_RATIO;
-    axisOffset[0] = DEFAULT_AZ_AXIS_OFFSET;
-    axisOffset[1] = DEFAULT_ALT_AXIS_OFFSET;
 
     IUFillNumber(&AxisAbsTurnsN[0], "AZ_AXIS_TURNS", "Az", "%5.4f rev", 0, 0, 0, 0);
     IUFillNumber(&AxisAbsTurnsN[1], "ALT_AXIS_TURNS", "Alt", "%5.4f rev", 0, 0, 0, 0);
@@ -318,18 +337,36 @@ bool PiRT::initProperties()
     IUFillNumberVector(&MotorStatusNP, MotorStatusN, 2, getDeviceName(), "MOTOR_STATUS", "Motor Status", "Motors",
         IP_RO, 60, IPS_IDLE);
 
-    IUFillNumber(&MotorThresholdN[0], "AZ_MOTOR_THRESHOLD", "Az", "%4.0f %%", 0, 100, 0, MIN_AZ_MOTOR_THROTTLE_DEFAULT * 100);
-    IUFillNumber(&MotorThresholdN[1], "ALT_MOTOR_THRESHOLD", "Alt", "%4.0f %%", 0, 100, 0, MIN_ALT_MOTOR_THROTTLE_DEFAULT * 100);
-    IUFillNumberVector(&MotorThresholdNP, MotorThresholdN, 2, getDeviceName(), "MOTOR_THRESHOLD", "Motor Thresholds", "Motors",
-        IP_RW, 60, IPS_IDLE);
-
     IUFillNumber(&MotorCurrentN[0], "AZ_MOTOR_CURRENT", "Az", "%4.2f A", 0, 0, 0, 0);
     IUFillNumber(&MotorCurrentN[1], "ALT_MOTOR_CURRENT", "Alt", "%4.2f A", 0, 0, 0, 0);
     IUFillNumberVector(&MotorCurrentNP, MotorCurrentN, 2, getDeviceName(), "MOTOR_CURRENT", "Motor Currents", "Motors",
         IP_RO, 60, IPS_IDLE);
 
-    IUFillNumber(&MotorCurrentLimitN[0], "AZ_MOTOR_CURRENT_LIMIT", "Az", "%4.2f A", 0, 0, 0, AZ_MOTOR_CURRENT_LIMIT_DEFAULT);
-    IUFillNumber(&MotorCurrentLimitN[1], "ALT_MOTOR_CURRENT_LIMIT", "Alt", "%4.2f A", 0, 0, 0, ALT_MOTOR_CURRENT_LIMIT_DEFAULT);
+    initval = MIN_AZ_MOTOR_THROTTLE_DEFAULT * 100;
+    if (IUGetConfigNumber(getDeviceName(), "MOTOR_THRESHOLD", "AZ_MOTOR_THRESHOLD", &initval)==0) {
+        DEBUGF(DBG_SCOPE, "Found config for AZ_MOTOR_THRESHOLD: %4.0f", initval);
+    }
+    IUFillNumber(&MotorThresholdN[0], "AZ_MOTOR_THRESHOLD", "Az", "%4.0f %%", 0, 100, 0, initval);
+
+    initval = MIN_ALT_MOTOR_THROTTLE_DEFAULT * 100;
+    if (IUGetConfigNumber(getDeviceName(), "MOTOR_THRESHOLD", "ALT_MOTOR_THRESHOLD", &initval)==0) {
+        DEBUGF(DBG_SCOPE, "Found config for ALT_MOTOR_THRESHOLD: %4.0f", initval);
+    }
+    IUFillNumber(&MotorThresholdN[1], "ALT_MOTOR_THRESHOLD", "Alt", "%4.0f %%", 0, 100, 0, initval);
+    IUFillNumberVector(&MotorThresholdNP, MotorThresholdN, 2, getDeviceName(), "MOTOR_THRESHOLD", "Motor Thresholds", "Motors",
+        IP_RW, 60, IPS_IDLE);
+
+    initval = AZ_MOTOR_CURRENT_LIMIT_DEFAULT;
+    if (IUGetConfigNumber(getDeviceName(), "MOTOR_CURRENT_LIMITS", "AZ_MOTOR_CURRENT_LIMIT", &initval)==0) {
+        DEBUGF(DBG_SCOPE, "Found config for AZ_MOTOR_CURRENT_LIMIT: %4.2f", initval);
+    }
+    IUFillNumber(&MotorCurrentLimitN[0], "AZ_MOTOR_CURRENT_LIMIT", "Az", "%4.2f A", 0, 0, 0, initval);
+
+    initval = ALT_MOTOR_CURRENT_LIMIT_DEFAULT;
+    if (IUGetConfigNumber(getDeviceName(), "MOTOR_CURRENT_LIMITS", "ALT_MOTOR_CURRENT_LIMIT", &initval)==0) {
+        DEBUGF(DBG_SCOPE, "Found config for ALT_MOTOR_CURRENT_LIMIT: %4.2f", initval);
+    }
+    IUFillNumber(&MotorCurrentLimitN[1], "ALT_MOTOR_CURRENT_LIMIT", "Alt", "%4.2f A", 0, 0, 0, initval);
     IUFillNumberVector(&MotorCurrentLimitNP, MotorCurrentLimitN, 2, getDeviceName(), "MOTOR_CURRENT_LIMITS", "Motor Current Limits", "Motors",
         IP_RW, 60, IPS_IDLE);
 
@@ -391,10 +428,11 @@ bool PiRT::updateProperties()
         defineProperty(&JDNP);
 
         deleteProperty(EncoderBitRateNP.name);
-        IUFillNumberVector(&EncoderBitRateNP, &EncoderBitRateN, 1, getDeviceName(), "ENC_SPI_SETTINGS", "SPI Interface", "Encoders",
-            IP_RO, 60, IPS_IDLE);
+//         IUFillNumberVector(&EncoderBitRateNP, &EncoderBitRateN, 1, getDeviceName(), "ENC_SPI_SETTINGS", "SPI Interface", "Encoders",
+//             IP_RO, 60, IPS_IDLE);
+        EncoderBitRateNP.p = IP_RO;
         defineProperty(&EncoderBitRateNP);
-        IDSetNumber(&EncoderBitRateNP, nullptr);
+//         IDSetNumber(&EncoderBitRateNP, nullptr);
 
         defineProperty(&AzEncoderNP);
         defineProperty(&ElEncoderNP);
@@ -413,18 +451,17 @@ bool PiRT::updateProperties()
         defineProperty(&GpioInputLP);
 
         IDSnoopDevice("Weather Watcher", "WEATHER_STATUS");
-
-        //deleteProperty(EncoderBitRateNP.name);
     } else {
         deleteProperty(ScopeStatusLP.name);
         deleteProperty(HorNP.name);
         deleteProperty(JDNP.name);
 
         deleteProperty(EncoderBitRateNP.name);
-        IUFillNumberVector(&EncoderBitRateNP, &EncoderBitRateN, 1, getDeviceName(), "ENC_SPI_SETTINGS", "SPI Interface", "Encoders",
-            IP_RW, 60, IPS_IDLE);
+//         IUFillNumberVector(&EncoderBitRateNP, &EncoderBitRateN, 1, getDeviceName(), "ENC_SPI_SETTINGS", "SPI Interface", "Encoders",
+//             IP_RW, 60, IPS_IDLE);
+        EncoderBitRateNP.p = IP_RW;
         defineProperty(&EncoderBitRateNP);
-        IDSetNumber(&EncoderBitRateNP, nullptr);
+//         IDSetNumber(&EncoderBitRateNP, nullptr);
 
         deleteProperty(AzEncoderNP.name);
         deleteProperty(ElEncoderNP.name);
@@ -657,6 +694,8 @@ bool PiRT::saveConfigItems(FILE *fp) {
     IUSaveConfigNumber(fp, &MotorCurrentLimitNP);
     IUSaveConfigNumber(fp, &MotorThresholdNP);
     IUSaveConfigNumber(fp, &EncoderBitRateNP);
+    IUSaveConfigNumber(fp, &AzAxisSettingNP);
+    IUSaveConfigNumber(fp, &ElAxisSettingNP);
     // Save base telescope config
     return INDI::Telescope::saveConfigItems(fp);
 }
