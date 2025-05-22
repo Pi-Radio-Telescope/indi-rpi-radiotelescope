@@ -115,8 +115,8 @@ const std::vector<GpioPin> GpioOutputVector { { "Relay1", 17, true },
 
 const std::vector<GpioPin> GpioInputVector { { "In1 (BCM8)", 8, false },
     { "In2 (BCM7)", 7, false },
-    { "In4 (BCM20)", 20, false },
-    { "In5 (BCM1)", 1, false } };
+    { "In3 (BCM20)", 20, false },
+    { "In4 (BCM1)", 1, false } };
 
 struct I2cVoltageDef {
     std::string name;
