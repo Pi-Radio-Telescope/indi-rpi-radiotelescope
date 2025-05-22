@@ -29,6 +29,7 @@
 #include "encoder.h"
 #include "gpioif.h"
 #include "motordriver.h"
+#include "config.h"
 
 #include "sysfspwm.hpp"
 
@@ -203,6 +204,7 @@ PiRT::PiRT()
     // We add an additional debug level so we can log verbose scope status
     DBG_SCOPE = INDI::Logger::getInstance().addDebugLevel("Scope Verbose", "SCOPE");
 
+    setVersion(CDRIVER_VERSION_MAJOR, CDRIVER_VERSION_MINOR);
     //    setTelescopeConnection(CONNECTION_SERIAL);
     setTelescopeConnection(CONNECTION_TCP);
     //    setTelescopeConnection(CONNECTION_NONE);
