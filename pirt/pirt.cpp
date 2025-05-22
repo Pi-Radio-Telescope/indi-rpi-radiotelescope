@@ -478,7 +478,6 @@ bool PiRT::updateProperties()
 
         deleteProperty(OutputSwitchSP.name);
         deleteProperty(GpioInputLP.name);
-        //		defineProperty(&EncoderBitRateNP);
     }
 
     return true;
