@@ -201,8 +201,9 @@ void ISSnoopDevice(XMLEle* root)
  */
 PiRT::PiRT()
 {
+    DBG_SCOPE = INDI::Logger::DBG_SESSION;
     // We add an additional debug level so we can log verbose scope status
-    DBG_SCOPE = INDI::Logger::getInstance().addDebugLevel("Scope Verbose", "SCOPE");
+//     DBG_SCOPE = INDI::Logger::getInstance().addDebugLevel("Scope Verbose", "SCOPE");
 
     setVersion(CDRIVER_VERSION_MAJOR, CDRIVER_VERSION_MINOR);
     //    setTelescopeConnection(CONNECTION_SERIAL);
