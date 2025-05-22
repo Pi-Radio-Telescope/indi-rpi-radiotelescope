@@ -1,13 +1,13 @@
-# define the project name
-project(indi-pirt C CXX)
 cmake_minimum_required(VERSION 3.14)
 
-include(GNUInstallDirs)
-#include(FetchContent)
+# define the project name
+project(indi-pirt C CXX)
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-ADD_DEFINITIONS(-std=gnu++17)
-ADD_DEFINITIONS(-Wall)
-ADD_DEFINITIONS(-Wno-psabi)
+include(GNUInstallDirs)
+
+add_compile_options(-Wall -Wextra -Wno-shadow -Wpedantic -Wno-psabi -O3)
 
 # add our cmake_modules folder
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake_modules/")
