@@ -612,7 +612,7 @@ int main(int argc, char *argv[])
 {
 	int msqid;
 	int msgflg = IPC_CREAT | 0666;
-	key_t key;
+	key_t key { DEFAULT_MSQ_ID };
 	message_t smsg;
 	size_t buf_length;
 	bool server=false;
@@ -621,8 +621,6 @@ int main(int argc, char *argv[])
 	vector<pair<int,int> > cmdLineActions;
 	bool exportTaskList=false;
 	long lastTaskID=-1;
-
-	key = MSQ_ID;
 
 /*	
 int main() {
