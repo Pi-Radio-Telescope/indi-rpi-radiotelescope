@@ -576,23 +576,40 @@ bool PiRT::ISNewNumber(const char* dev, const char* name, double values[], char*
             axisOffset[1] = values[1];
             DEBUGF(DBG_SCOPE, "Setting El axis turns ratio to %5.4f rev.", axisRatio[1]);
             DEBUGF(DBG_SCOPE, "Setting El axis offset %5.4f rev.", axisOffset[1]);
-            return true;
         } else if (!strcmp(name, MotorCurrentLimitNP.name)) {
             // set motor current limit
-            MotorCurrentLimitNP.s = IPS_OK;
-            MotorCurrentLimitN[0].value = values[0];
-            MotorCurrentLimitN[1].value = values[1];
+            bool success { true };
+            for (int index{0}; index < n; ++index) {
+                INumber* nr = IUFindNumber(&MotorCurrentLimitNP, names[index]);
+                if (nr != nullptr) {
+                    std::size_t nr_pos = std::distance(MotorCurrentLimitN, nr);
+                    MotorCurrentLimitN[nr_pos].value = values[index];
+                    DEBUGF(DBG_SCOPE, "Setting motor current limit of axis%1.0f to %5.3f A", nr_pos, MotorCurrentLimitN[nr_pos].value);
+                } else {
+                    success = false;
+                }
+            }
+            if (!success) {
+                MotorCurrentLimitNP.s = IPS_ALERT;
+            } else MotorCurrentLimitNP.s = IPS_OK;
             IDSetNumber(&MotorCurrentLimitNP, nullptr);
-            DEBUGF(DBG_SCOPE, "Setting motor current limits to %5.3f A (Az) and %5.3f A (Alt)", MotorCurrentLimitN[0].value, MotorCurrentLimitN[1].value);
-            return true;
         } else if (!strcmp(name, MotorThresholdNP.name)) {
             // set motor thresholds
-            MotorThresholdNP.s = IPS_OK;
-            MotorThresholdN[0].value = values[0];
-            MotorThresholdN[1].value = values[1];
+            bool success { true };
+            for (int index{0}; index < n; ++index) {
+                INumber* nr = IUFindNumber(&MotorThresholdNP, names[index]);
+                if (nr != nullptr) {
+                    std::size_t nr_pos = std::distance(MotorThresholdN, nr);
+                    MotorThresholdN[nr_pos].value = values[index];
+                    DEBUGF(DBG_SCOPE, "Setting motor threshold of axis%1.0f to %4.0f%%", nr_pos, MotorThresholdN[nr_pos].value);
+                } else {
+                    success = false;
+                }
+            }
+            if (!success) {
+                MotorThresholdNP.s = IPS_ALERT;
+            } else MotorThresholdNP.s = IPS_OK;
             IDSetNumber(&MotorThresholdNP, nullptr);
-            DEBUGF(DBG_SCOPE, "Setting motor thresholds to %4.0f %% (Az) and %4.0f %% (Alt)", MotorThresholdN[0].value, MotorThresholdN[1].value);
-            return true;
         } else if (!strcmp(name, MeasurementIntTimeNP.name)) {
             if (!voltageMeasurements.empty() && values[0] > 0. && values[0] < 1000.) {
                 for (auto meas : voltageMeasurements) {
