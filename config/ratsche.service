@@ -7,7 +7,8 @@ After=indiserver.service
 [Service]
 Type=forking
 User=pi
-ExecStart=/bin/bash -c 'exec $(which ratsche) -d -vv -o /home/pi/data/ratsche/'
+ExecStart=/bin/bash -c 'exec $(which ratsche) -d -vv -o /mnt/webdata/'
+#/home/pi/data/ratsche/
 #ExecStop=/bin/kill $MAINPID
 Restart=always
 TimeoutSec=10

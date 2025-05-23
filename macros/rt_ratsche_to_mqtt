@@ -1,6 +1,6 @@
 #!/bin/bash
 # read ratsche tasklist in a loop and send them to a MQTT broker
-# 10.11.2021 antrares
+# 25.11.2022 antrares
 
 # usage: ./rt_ratsche_to_mqtt <DELAY>
 # with the optional argument DELAY: waiting time BEFORE each poll in s
@@ -18,8 +18,10 @@ do
 
 sleep $DELAY
 
-ratsche_msg=$(ratsche -l 2>/dev/null)
+ratsche_msg=$(ratsche -lr 2>/dev/null)
 
-mosquitto_pub --quiet -h $mqtt_host  -p $mqtt_port  -i $mqtt_id  -t $mqtt_topic  -m "$ratsche_msg"
+mosquitto_pub --quiet -c -h $mqtt_host  -p $mqtt_port  -i $mqtt_id  -t $mqtt_topic  -m "$ratsche_msg"
+
+#ratsche -lr 2>/dev/null | mosquitto_pub --quiet -c -l -h $mqtt_host -p $mqtt_port -i $mqtt_id -t $mqtt_topic
 
 done

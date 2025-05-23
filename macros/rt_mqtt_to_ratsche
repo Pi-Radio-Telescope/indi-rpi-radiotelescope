@@ -1,6 +1,6 @@
 #!/bin/bash
 # read mqtt messages in a loop and send them to ratsche
-# 01.12.2021 antrares
+# 25.11.2022 antrares
 
 mqtt_host="*****"
 mqtt_port="*****"
@@ -33,4 +33,4 @@ case $prop in
 	;;
 esac
 
-done < <(mosquitto_sub --quiet -h $mqtt_host  -p $mqtt_port  -i $mqtt_id  -t $mqtt_topic)
+done < <(mosquitto_sub --quiet -c -h $mqtt_host -p $mqtt_port -i $mqtt_id -t $mqtt_topic)

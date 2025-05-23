@@ -20,10 +20,10 @@ using namespace std;
 using namespace hgz;
 
 const string INDI_PORT { "-p 7624" };
-const string _cmd_driftscan = "rt_transitscan %f %f %s %f";
-const string _cmd_tracking = "rt_tracking %f %f %s %f";
-const string _cmd_horscan = "rt_scan_hor %f %f %f %f %s %f %f %f";
-const string _cmd_equscan = "rt_scan_equ %f %f %f %f %s %f %f %f";
+const string _cmd_driftscan = "rt_transitscan %f %f %s %f %d";
+const string _cmd_tracking = "rt_tracking %f %f %s %f %d";
+const string _cmd_horscan = "rt_scan_hor %f %f %f %f %s %f %f %f %d";
+const string _cmd_equscan = "rt_scan_equ %f %f %f %f %s %f %f %f %d";
 const string INDI_DEVICE { "Pi Radiotelescope" };
 const string INDI_PROP_HOR_COORD { INDI_DEVICE+".HORIZONTAL_EOD_COORD" };
 const string INDI_PROP_EQU_COORD { INDI_DEVICE+".EQUATORIAL_EOD_COORD" };
@@ -283,7 +283,8 @@ int DriftScanTask::Start()
 		sprintf(tmpstr, string(_cmd_driftscan).c_str(), (float)fStartCoords.Phi(), 
 				(float)fStartCoords.Theta(), 
 				string( ( (fDataPath.empty()) ? "" : fDataPath+"/" ) + fDataFile).c_str(),
-				intTime
+				intTime,
+                fRefInterval
    			);
 		cmdstring+=tmpstr;
 
@@ -365,7 +366,8 @@ int TrackingTask::Start()
 		sprintf(tmpstr, string(_cmd_tracking).c_str(), (float)fTrackCoords.Phi(), 
 				(float)fTrackCoords.Theta(),
 				string( ( (fDataPath.empty()) ? "" : fDataPath+"/" ) + fDataFile).c_str(),
-				intTime
+				intTime,
+                fRefInterval
    			);
 		cmdstring+=tmpstr;
 
@@ -457,7 +459,7 @@ int HorScanTask::Start()
 		sprintf(tmpstr, string(_cmd_horscan).c_str(),(float)fStartCoords.Phi(), (float)fEndCoords.Phi(),
 		 fStartCoords.Theta(), fEndCoords.Theta(),
 		 string( ( (fDataPath.empty()) ? "" : fDataPath+"/" ) + fDataFile).c_str(),
-		 stepAz, stepAlt, intTime
+		 stepAz, stepAlt, intTime, fRefInterval
 		);
 		cmdstring+=tmpstr;
 
@@ -552,7 +554,7 @@ int EquScanTask::Start()
 		sprintf(tmpstr, string(_cmd_equscan).c_str(),(float)fStartCoords.Phi(), (float)fEndCoords.Phi(),
 			(float)fStartCoords.Theta(), (float)fEndCoords.Theta(),
 			string( ( (fDataPath.empty()) ? "" : fDataPath+"/" ) + fDataFile).c_str(),
-			stepRa, stepDec, intTime
+			stepRa, stepDec, intTime, fRefInterval
 			);
 		cmdstring+=tmpstr;
 

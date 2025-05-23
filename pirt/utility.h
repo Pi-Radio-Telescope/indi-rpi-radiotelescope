@@ -1,5 +1,4 @@
-#ifndef UTILITY_H
-#define UTILITY_H
+#pragma once
 
 #include <algorithm>
 #include <array>
@@ -14,7 +13,13 @@
 
 namespace PiRaTe {
 
-	
+// helper function for determination of a value's sign
+template <typename T>
+constexpr int sgn(T val)
+{
+    return (T(0) < val) - (val < T(0));
+}
+
 template <typename T, std::size_t N>
 class Ringbuffer {
 public:
@@ -29,7 +34,6 @@ private:
     std::size_t m_index;
     bool m_full { false };
 };
-
 
 // +++++++++++++++++++++++++++++++
 // implementation part starts here
@@ -88,5 +92,3 @@ auto Ringbuffer<T, N>::entries() const -> std::size_t
 // -------------------------------
 
 } // namespace PiRaTe
-
-#endif // #define UTILITY_H
