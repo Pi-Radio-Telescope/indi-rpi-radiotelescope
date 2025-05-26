@@ -1,6 +1,6 @@
 #!/bin/bash
 # show RT position and onboard adc values in a loop
-# 20/05/2025 HGZ/antrares
+# 23/05/2025 HGZ/antrares
 
 # usage: ./rt_ads1115_measurement.sh <N> <INT_TIME> <CAL_INTERVAL>
 # with the optional arguments
@@ -27,11 +27,7 @@ if [ $# -eq 3 ]; then
    CAL_INTERVAL=$3
 fi
 
-indi_rpi_device="Pi Radiotelescope"
-indi_ads1x15_device="ADS1x15_ADC"
-cmd_indi_rpi="indi_getprop -t 5 -1"
-cmd_indi_ads1x15="indi_getprop -h 172.16.2.11 -t 5 -1"
-
+indi_rpi="Pi Radiotelescope"
 prop_timestamp="TIME_UTC.UTC"
 prop_az="HORIZONTAL_EOD_COORD.AZ"
 prop_alt="HORIZONTAL_EOD_COORD.ALT"
@@ -39,14 +35,17 @@ prop_ra="EQUATORIAL_EOD_COORD.RA"
 prop_dec="EQUATORIAL_EOD_COORD.DEC"
 prop_temp1="TEMPERATURE_MONITOR.TEMPERATURE1"
 prop_temp2="TEMPERATURE_MONITOR.TEMPERATURE2"
-prop_adc_main="MEASUREMENTS.MEASUREMENT0"
-prop_adc_aux="MEASUREMENTS.MEASUREMENT0"
+prop_adc="MEASUREMENTS.MEASUREMENT0"
 prop_cal="GPIO_OUTPUTS.GPIO_OUT4"
 prop_int_time="INT_TIME.TIME"
 
 # set integration time
-echo -n $(indi_setprop -n "$indi_rpi_device.$prop_int_time=$INT_TIME")
-echo -n $(indi_setprop -h 172.16.2.11 -n "$indi_ads1x15_device.$prop_int_time=$INT_TIME")
+while [[ $(indi_getprop -t 5 -1 "$indi_rpi.$prop_int_time") != $INT_TIME ]]; do
+   echo -n $(indi_setprop -n "$indi_rpi.$prop_int_time"=$INT_TIME)
+done
+while [[ $(indi_getprop -h 172.16.2.11 -t 5 -1 "ADS1x15_ADC.INT_TIME.INT_TIME") != $INT_TIME ]]; do
+   echo -n $(indi_setprop -h 172.16.2.11 -n ADS1x15_ADC.INT_TIME.INT_TIME=$INT_TIME)
+done
 
 # make number of measurements
 count=0
@@ -55,28 +54,26 @@ while [[ $count -lt $N ]] || [[ $N == 0 ]]
 do
 
   if [[ $count_cal == $CAL_INTERVAL ]] && [[ $count_cal != -1 ]]; then
-     while [[ $($cmd_indi_rpi "$indi_rpi_device.$prop_cal") == "Off" ]]; do
-        echo -n $(indi_setprop "$indi_rpi_device.$prop_cal=On")
+     while [[ $(indi_getprop -t 5 -1 "$indi_rpi.$prop_cal") == "Off" ]]; do
+        echo -n $(indi_setprop "$indi_rpi.$prop_cal=On")
      done
-     sleep 0.5
+     sleep 0.4
      count_cal=-1
   fi
 
   sleep $INT_TIME
   
-  indi_rpi_props=$($cmd_indi_rpi "$indi_rpi_device.$prop_timestamp" 2>/dev/null)
-  timestamp=$indi_rpi_props 
-  
-  indi_rpi_props=$($cmd_indi_rpi "$indi_rpi_device.$prop_ra" "$indi_rpi_device.$prop_dec" \
-  "$indi_rpi_device.$prop_az" "$indi_rpi_device.$prop_alt" \
-  "$indi_rpi_device.$prop_adc_aux" \
-  "$indi_rpi_device.$prop_temp1" "$indi_rpi_device.$prop_temp2" "$indi_rpi_device.$prop_cal" \
-  2>/dev/null)
+  indi_props=$(indi_getprop -t 5 -1 "$indi_rpi.$prop_timestamp" 2>/dev/null)
+  timestamp=$indi_props 
 
-  indi_ads1x15_props=$($cmd_indi_ads1x15 "$indi_ads1x15_device.$prop_adc_main" 2>/dev/null)
-  adc_main=$(printf "%1.4f" $indi_ads1x15_props)
+  indi_props=$(indi_getprop -h 172.16.2.11 -t 5 -1 "ADS1x15_ADC.MEASUREMENTS.MEASUREMENT0" 2>/dev/null)
+  adc_main=$(printf "%1.4f" $indi_props)
   
-  for i in $indi_rpi_props; do
+  indi_props=$(indi_getprop -t 5 -1 "$indi_rpi.$prop_ra" "$indi_rpi.$prop_dec" \
+  "$indi_rpi.$prop_az" "$indi_rpi.$prop_alt" "$indi_rpi.$prop_adc" \
+  "$indi_rpi.$prop_temp1" "$indi_rpi.$prop_temp2" "$indi_rpi.$prop_cal" \
+  2>/dev/null)
+  for i in $indi_props; do
     if echo $i | grep -qe $prop_ra
     then
       ra=$(echo $i | awk -F"=" '{ printf "%1.5f", strtonum($(NF)) }')
@@ -101,7 +98,7 @@ do
     then
       temp2=$(echo $i | awk -F"=" '{ printf "%1.2f", strtonum($(NF)) }')
     fi
-    if echo $i | grep -qe $prop_adc_aux
+    if echo $i | grep -qe $prop_adc
     then
       adc_aux=$(echo $i | awk -F"=" '{ printf "%1.4f", strtonum($(NF)) }')
     fi
@@ -118,10 +115,10 @@ do
   echo $timestamp $az $alt $ra $dec $adc_main $adc_aux $temp1 $temp2 $cal
   
   if [[ $count_cal == -1 ]]; then
-     while [[ $($cmd_indi_rpi "$indi_rpi_device.$prop_cal") == "On" ]]; do
-       echo -n $(indi_setprop "$indi_rpi_device.$prop_cal=Off")
+     while [[ $(indi_getprop -t 5 -1 "$indi_rpi.$prop_cal") == "On" ]]; do
+       echo -n $(indi_setprop "$indi_rpi.$prop_cal=Off")
      done
-     sleep 0.5
+     sleep 0.4
   fi
 
   let count_cal=$count_cal+1

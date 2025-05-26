@@ -1,14 +1,17 @@
 #!/bin/bash
 # scan equatorial window in a grid and take measurement at each point
-# 01.09.2021 HGZ
+# 23/05/2025 HGZ/antrares
 
-# integration time for measurements
-INT_TIME=1
 # Timeout for waiting until RT reached set position in seconds
 TIMEOUT=300
+# INT_TIME: integration time and waiting time BEFORE each measurement in s
+INT_TIME=1
 #step size in degrees
 STEP_RA_DEFAULT=0.067
 STEP_DEC_DEFAULT=1.0
+# CAL_INTERVAL: nr. of cycles which have to be passed until a calibration is made, 
+#               -1 disables calibration, 0 sets continous calibration 
+CAL_INTERVAL=-1
 
 cmd_stop='indi_setprop "Pi Radiotelescope.TELESCOPE_ABORT_MOTION.ABORT=On"'
 
@@ -31,12 +34,6 @@ goto_pos()
 		_ra=$(echo "scale=6; $1-24.0" | bc)
 	fi
 
-	tout="$TIMEOUT"
-	if [ "$3" ] # Is parameter #3 !zero length?
-	then
-		tout="$3"
-	fi
-
 	# goto position
 	echo -n $(indi_setprop "Pi Radiotelescope.EQUATORIAL_EOD_COORD.RA;DEC=$_ra;$_dec")
 	sleep 1
@@ -46,20 +43,21 @@ goto_pos()
 # write one line of explanatory header to the file supplied by the first argument
 write_file_header()
 {
-	echo "# time az alt ra dec adc1 adc2 temp1 temp2" >> $1
+	echo "#  date      time      az      alt      ra     dec  adc_main adc_aux temp1 temp2 cal" >> $1
 }
 
 # main code
 if [ $# -lt 5 ]; then
   echo "Scan equatorial window in a grid and take measurement at each point"
   echo "need at least 5 arguments (equatorial coordinate boundaries and filename) for scan"
-  echo "usage: $0 <min_ra> <max_ra> <min_dec> <max_dec> <file> [<step_ra> <step_dec> <int_time>]"
-  echo " parameters:"
-  echo "  min_ra, min_dec - coordinate of lower left corner"
-  echo "  max_ra, max_dec - coordinate of upper right corner"
-  echo "  file - output file name"
-  echo "  step_ra, step_dec - (optional) step size of coordinates in hours (RA) and degrees (DEC) (default 1)"
-  echo "  int_time - (optional) integration time of the measurement in seconds (default 1)"
+  echo "usage: rt_scan_equ <min_ra> <max_ra> <min_dec> <max_dec> <file> [<step_ra>] [<step_dec>] [<int_time>] [<cal_interval>]"
+  echo " arguments:"
+  echo "  min_ra, min_dec   - coordinate of lower left corner"
+  echo "  max_ra, max_dec   - coordinate of upper right corner"
+  echo "  file              - output file name"
+  echo "  step_ra, step_dec - (optional) step size of coordinates in hours (RA) and degrees (DEC) (default: 1)"
+  echo "  int_time          - (optional) integration time of the measurement in seconds (default: 1)"
+  echo "  cal_interval      - (optional) number of datapoints after which a calibration is performed (default: -1 -> no calibration)"
   exit 1
 fi
 
@@ -79,15 +77,19 @@ STEP_RA=$STEP_RA_DEFAULT
 STEP_DEC=$STEP_DEC_DEFAULT
 
 if [ $# -gt 5 ]; then
-        STEP_RA=$6
+  STEP_RA=$6
 fi
 
 if [ $# -gt 6 ]; then
-        STEP_DEC=$7
+  STEP_DEC=$7
 fi
 
 if [ $# -gt 7 ]; then
-        INT_TIME=$8
+  INT_TIME=$8
+fi
+
+if [ $# -gt 8 ]; then
+  CAL_INTERVAL=$9
 fi
 
 min_ra=$1
@@ -108,6 +110,7 @@ echo "western boundary = " $max_ra
 echo "Ra stepsize = " $STEP_RA
 echo "Dec stepsize = " $STEP_DEC
 echo "Integration time = " $INT_TIME
+echo "Calibration Interval = " $CAL_INTERVAL
 
 #exit 0 
 
@@ -117,15 +120,13 @@ dec=$min_dec
 # switch off tracking
 echo -n $(indi_setprop "Pi Radiotelescope.TELESCOPE_TRACK_STATE.TRACK_OFF=On")
 
-#set integration time
-echo -n $(indi_setprop -n "Pi Radiotelescope.INT_TIME.TIME=$INT_TIME")
-
 # goto first measurement position
 goto_pos $ra $dec 100
 
 # write first line with explanation of columns as comment to data file
 write_file_header $5
 
+count_cal=0
 while [ $(echo "scale=6; $ra <= $max_ra"|bc) -eq 1 ]
 do
    # zuerst nach oben scannen
@@ -134,10 +135,19 @@ do
    do
       echo "ra=" $ra " dec=" $dec
       goto_pos $ra $dec
-      # wait at least int_time before reading out the averaged measurement
-      #sleep $INT_TIME 
-      echo -n $(rt_ads1115_measurement 1 $INT_TIME  >> $5)
 
+      if [[ $CAL_INTERVAL != -1 ]]; then
+        if [[ $count_cal == $CAL_INTERVAL ]]; then
+          echo -n $(rt_ads1115_measurement 2 $INT_TIME 1 >> $5) # Messwert und Kalibrierwert
+		  count_cal=1
+	    else
+	      echo -n $(rt_ads1115_measurement 1 $INT_TIME -1 >> $5) # nur Messwert
+	      let count_cal=$count_cal+1		  
+        fi
+	  else
+	    echo -n $(rt_ads1115_measurement 1 $INT_TIME -1 >> $5) # nur Messwert
+	  fi
+	  
       dec=$(echo "scale=6; $dec+$STEP_DEC" | bc)
    done
 
@@ -149,9 +159,18 @@ do
    do
       echo "ra=" $ra " dec=" $dec
       goto_pos $ra $dec
-      # wait at least int_time before reading out the averaged measurement
-      #sleep $INT_TIME
-      echo -n $(rt_ads1115_measurement 1 $INT_TIME  >> $5)
+
+      if [[ $CAL_INTERVAL != -1 ]]; then
+        if [[ $count_cal == $CAL_INTERVAL ]]; then
+          echo -n $(rt_ads1115_measurement 2 $INT_TIME 1 >> $5) # Messwert und Kalibrierwert
+		  count_cal=1
+	    else
+	      echo -n $(rt_ads1115_measurement 1 $INT_TIME -1 >> $5) # nur Messwert
+	      let count_cal=$count_cal+1		  
+        fi
+	  else
+	    echo -n $(rt_ads1115_measurement 1 $INT_TIME -1 >> $5) # nur Messwert
+	  fi
 
       dec=$(echo "scale=6; $dec-$STEP_DEC" | bc)
    done

@@ -51,7 +51,7 @@ if [ $# -lt 3 ]; then
   echo "  az, alt   - coordinate in horizontal system"
   echo "  file      - output file name"
   echo "  int_time  - (optional) integration time of the measurements in seconds (default: 1)"
-  echo "  cal_interval - (optional) number of datapoints after which a rcalibration is performed (default: -1 -> no calibration)"
+  echo "  cal_interval - (optional) number of datapoints after which a calibration is performed (default: -1 -> no calibration)"
   exit 1
 fi
 
@@ -67,12 +67,11 @@ if [[ $(echo "scale=6; $2 > 90.0"|bc) -eq 1 ]]; then
   exit 3
 fi
 
-if [ $# -eq 4 ]; then
+if [ $# -gt 3 ]; then
   INT_TIME=$4
 fi
 
-if [ $# -eq 5 ]; then
-  INT_TIME=$4
+if [ $# -gt 4 ]; then
   CAL_INTERVAL=$5
 fi
 
