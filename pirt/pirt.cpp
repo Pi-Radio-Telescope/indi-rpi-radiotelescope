@@ -682,13 +682,17 @@ bool PiRT::ISSnoopDevice(XMLEle* root)
         return false;
     if (!strcmp(name, WeatherStatusNP.name)) {
         (void)crackIPState(findXMLAttValu(root, "state"), &WeatherStatusNP.s);
-        if (WeatherStatusNP.s == IPS_OK)
+        if (WeatherStatusNP.s == IPS_OK) {
             DEBUG(INDI::Logger::DBG_SESSION, "Weather status is ok");
-        else if (WeatherStatusNP.s == IPS_BUSY)
+            return true;
+        } else if (WeatherStatusNP.s == IPS_BUSY) {
             DEBUG(INDI::Logger::DBG_SESSION, "Weather status is in warning range");
-        else if (WeatherStatusNP.s == IPS_ALERT)
+            return true;
+        } else if (WeatherStatusNP.s == IPS_ALERT) {
             DEBUG(INDI::Logger::DBG_WARNING, "Weather status is critical!");
-        return true;
+            Park();
+            return true;
+        }
     }
     return INDI::Telescope::ISSnoopDevice(root);
 }
