@@ -377,7 +377,12 @@ bool PiRT::initProperties()
     IUFillNumber(&VoltageMeasurementN[0], "MEASUREMENT0", "+0V", "%4.2f V", 0, 0, 0, 0);
     IUFillNumberVector(&VoltageMeasurementNP, VoltageMeasurementN, 0, getDeviceName(), "MEASUREMENTS", "Measurements", "Monitoring",
         IP_RO, 60, IPS_IDLE);
-    IUFillNumber(&MeasurementIntTimeN, "TIME", "time", "%5.2f s", 0.01, 1000., 0.1, DEFAULT_INT_TIME.count() / 1000.);
+    
+    initval = DEFAULT_INT_TIME.count() / 1000.;
+    if (IUGetConfigNumber(getDeviceName(), "INT_TIME", "TIME", &initval)==0) {
+        DEBUGF(DBG_SCOPE, "Found config for INT_TIME: %5.2f", initval);
+    }
+    IUFillNumber(&MeasurementIntTimeN, "TIME", "Time", "%5.2f s", 0.01, 1000., 0.1, initval);
     IUFillNumberVector(&MeasurementIntTimeNP, &MeasurementIntTimeN, 1, getDeviceName(), "INT_TIME", "Integration Time", "Monitoring",
         IP_RW, 60, IPS_IDLE);
 
@@ -695,6 +700,7 @@ bool PiRT::saveConfigItems(FILE *fp) {
     IUSaveConfigNumber(fp, &EncoderBitRateNP);
     IUSaveConfigNumber(fp, &AzAxisSettingNP);
     IUSaveConfigNumber(fp, &ElAxisSettingNP);
+    IUSaveConfigNumber(fp, &MeasurementIntTimeNP);
     // Save base telescope config
     return INDI::Telescope::saveConfigItems(fp);
 }
