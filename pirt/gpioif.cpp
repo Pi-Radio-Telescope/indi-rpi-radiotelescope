@@ -1,135 +1,322 @@
 #include <iostream>
 #include <stdio.h>
-//#include <pigpio.h>
+#include <chrono>
 
-//#include <stdint.h>
 #include <unistd.h>
-//#include <stdlib.h>
-//#include <getopt.h>
 
 #include "gpioif.h"
 
-extern "C" {
-#include <pigpiod_if2.h>
-}
 
 #define DEFAULT_VERBOSITY 1
 
-// namespace PiRaTe {
+namespace PiRaTe {
 
-GPIO::GPIO(const std::string& host, const std::string& port) 
+constexpr char DEFAULT_GPIO_CONSUMER[] = "PiRaTe";
+constexpr std::chrono::seconds LINE_EVENT_TIMEOUT { 10 };
+
+Gpio::Gpio(const std::string& gpio_chip_devpath)
+    : fChip(gpio_chip_devpath)
 {
-    if (fHandle<0) {
-		char* addrStr = const_cast<char*>(host.c_str());
-		char* portStr = const_cast<char*>(port.c_str());
-//		fHandle = pigpio_start((char*)"127.0.0.1", (char*)"8888");
-		fHandle = pigpio_start(addrStr, portStr);
-		if (fHandle < 0) {
-			std::cerr<<"Could not connect to pigpio daemon. Is pigpiod running?\n";
-			return;
-		}
-	}
+    if (!fChip) {
+        std::cerr << "error opening gpio chip " << gpio_chip_devpath << "\n";
+        throw std::exception();
+    }
+    std::cout << "opened " << gpio_chip_devpath << ": nlines=" << fChip.num_lines() << "\n";
 }
 
-
-GPIO::~GPIO() {
-    if (fHandle>=0) {
-		pigpio_stop(fHandle);
-	}
-    fHandle = -1;
-}
-
-
-auto GPIO::spi_init(SPI_INTERFACE interface, std::uint8_t channel, SPI_MODE mode, unsigned int baudrate, bool lsb_first, bool use_cs) -> int
+Gpio::~Gpio()
 {
-	unsigned int spi_flags = static_cast<unsigned int>(mode) | (static_cast<unsigned int>(lsb_first) << 15);
-	if (interface == SPI_INTERFACE::Aux) {
-		spi_flags |= 1 << 8;
-		//std::cout<<"spi flags: "<<spi_flags<<"\n";
-	}
-	if (!use_cs) {
-		spi_flags |= 0b111 << 5;
-	}
-	int handle = ::spi_open(fHandle, channel, baudrate, spi_flags);
-	if (handle < 0) {
-		std::cerr<<"Error opening spi interface.\n";
-	}
-	return handle;
+    this->stop();
+    for (auto [gpio, line] : fInterruptLineMap) {
+        line.release();
+    }
+    for (auto [gpio, line] : fLineMap) {
+        line.release();
+    }
 }
 
-auto GPIO::spi_read(unsigned int spi_handle, unsigned int nBytes) -> std::vector<std::uint8_t>
+void Gpio::processEvent(unsigned int gpio, gpiod::line_event event)
 {
-	char rx_buffer[nBytes];
-	std::lock_guard<std::mutex> guard(fMutex);
-	int count = ::spi_read(fHandle, spi_handle, rx_buffer, nBytes);
-	if (count<=0) return std::vector<std::uint8_t> {};
-	std::vector<std::uint8_t> data(rx_buffer,rx_buffer+std::min(static_cast<unsigned int>(count),nBytes));
-	return data;
+    auto timestamp{ event.timestamp };
+    
+    if (fEventCallback) fEventCallback(gpio, timestamp);
+    
+    if (verbose > 3) {
+        std::cout << "line event: gpio" << gpio << " edge: "
+                 << std::string((event.event_type == gpiod::line_event::RISING_EDGE) ? "rising" : "falling")
+                 << " ts=" << timestamp.count() << "ns\n";
+    }
 }
 
-auto GPIO::spi_write(unsigned int spi_handle, const std::vector<std::uint8_t>& data) -> bool
+void Gpio::eventHandler(gpiod::line line)
 {
-	unsigned int nBytes = data.size();
-	char tx_buffer[nBytes];
-	std::copy(data.begin(), data.end(), tx_buffer);
-	std::lock_guard<std::mutex> guard(fMutex);
-	int count = ::spi_write(fHandle, spi_handle, tx_buffer, nBytes);
-	return (count == static_cast<int>(nBytes));
+    while (fThreadRunning) {
+        if (inhibit) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            continue;
+        }
+        const unsigned int gpio { line.offset() };
+        if ( line.event_wait(LINE_EVENT_TIMEOUT) ) {
+            gpiod::line_event event { line.event_read() };
+            std::thread process_event_bg(&Gpio::processEvent, this, gpio, std::move(event));
+            process_event_bg.detach();
+        } else {
+            // a timeout occurred, no event was detected
+            // simply go over into the wait loop again
+        }
+    }
 }
 
-void GPIO::spi_close(int spi_handle)
+bool Gpio::setPinInput(unsigned int gpio, std::bitset<32> flags)
 {
-	::spi_close(fHandle, spi_handle);
+    if (!is_initialised()) {
+        std::cerr << "Gpio::setPinInput: chip not initialised\n";
+        return false;
+    }
+    auto it = fLineMap.find(gpio);
+
+    if (it != fLineMap.end()) {
+        // line object exists, request for input
+        it->second.set_direction_input();
+        it->second.set_flags(flags);
+        return true;
+    }
+    // line was not allocated yet, so do it now
+    gpiod::line line = fChip.get_line(gpio);
+    // see if this line is already in use
+    if (line.is_used()) {
+        std::cerr << "Gpio::setPinInput: line " << gpio << " already in use\n";
+        return false;
+    }
+
+    // request the line
+    line.request( { 
+        DEFAULT_GPIO_CONSUMER,
+        gpiod::line_request::DIRECTION_INPUT,
+        flags
+    });
+    
+    fLineMap.emplace(std::make_pair(gpio, std::move(line)));
+    return true;
 }
 
-auto GPIO::pwm_set_frequency(unsigned int gpio_pin, unsigned int freq) -> bool {
-	int res = ::set_PWM_frequency(fHandle, gpio_pin, freq);
-	return (res >= 0);
+bool Gpio::setPinOutput(unsigned int gpio, bool initState, std::bitset<32> flags)
+{
+    if (!is_initialised()){
+        std::cerr << "Gpio::setPinOutput: chip not initialised\n";
+        return false;
+    }
+    auto it = fLineMap.find(gpio);
+
+    if (it != fLineMap.end()) {
+        // line object exists, request for output
+        it->second.set_direction_output(static_cast<int>(initState));
+        it->second.set_flags(flags);
+        return true;
+    }
+    // line was not allocated yet, so do it now
+    gpiod::line line = fChip.get_line(gpio);
+    // see if this line is already in use
+    if (line.is_used()) {
+        std::cerr << "Gpio::setPinInput: line " << gpio << " already in use\n";
+        return false;
+    }
+
+    // request the line
+    line.request( { 
+        DEFAULT_GPIO_CONSUMER,
+        gpiod::line_request::DIRECTION_OUTPUT,
+        flags
+    });
+    fLineMap.emplace(std::make_pair(gpio, std::move(line)));
+    return true;
 }
 
-auto GPIO::pwm_set_range(unsigned int gpio_pin, unsigned int range) -> bool {
-	int res = ::set_PWM_range(fHandle, gpio_pin, range);
-	return (res == 0);
+bool Gpio::setPinBias(unsigned int gpio, std::bitset<32> bias_flags)
+{
+    if (!is_initialised()) {
+        std::cerr << "Gpio::setPinBias: gpiochip not initialised\n";
+        return false;
+    }
+
+    auto it = fLineMap.find(gpio);
+    if (it != fLineMap.end()) {
+        // line object exists, set config
+        it->second.set_flags(bias_flags);
+        return true;
+    }
+    // line was not allocated yet, so do it now
+    gpiod::line line = fChip.get_line(gpio);
+    // see if this line is already in use
+    if (line.is_used()) {
+        std::cerr << "Gpio::setPinInput: line " << gpio << " already in use\n";
+        return false;
+    }
+
+    // request the line
+    line.request( { 
+        DEFAULT_GPIO_CONSUMER,
+        gpiod::line_request::DIRECTION_AS_IS,
+        bias_flags
+    });
+    fLineMap.emplace(std::make_pair(gpio, std::move(line)));
+    return true;
 }
 
-auto GPIO::pwm_set_value(unsigned int gpio_pin, unsigned int value) -> bool {
-	int res = ::set_PWM_dutycycle(fHandle, gpio_pin, value);
-	return (res == 0);
+bool Gpio::setPinState(unsigned int gpio, bool state)
+{
+    if (!is_initialised()) {
+        std::cerr << "Gpio::setPinState: gpiochip not initialised\n";
+        return false;
+    }
+    auto it = fLineMap.find(gpio);
+    if (it != fLineMap.end()) {
+        // line object exists, look if it an  output
+        if (it->second.direction() != Direction::DIRECTION_OUTPUT) {
+            std::cerr << "Gpio::setPinState: trying to set state of non-output line" << gpio << "\n";
+            return false;
+        }
+    }
+    // line was not allocated yet, so do it now
+    return setPinOutput(gpio, state);
 }
 
-void GPIO::pwm_off(unsigned int gpio_pin) {
-	::set_PWM_dutycycle(fHandle, gpio_pin, 0);
+bool Gpio::getPinState(unsigned int gpio)
+{
+    if (!is_initialised()) {
+        std::cerr << "Gpio::getPinState: gpiochip not initialised\n";
+        return false;
+    }
+    auto it = fLineMap.find(gpio);
+    if (it != fLineMap.end()) {
+        // line object exists, look if it is an input
+        if (it->second.direction() != Direction::DIRECTION_INPUT) {
+            std::cerr << "Gpio::getPinState: trying to get state of non-input line" << gpio << "\n";
+            return false;
+        }
+        return static_cast<bool>(it->second.get_value());
+    }
+    // line was not allocated yet, so do it now
+    if (!setPinInput(gpio)) {
+        std::cerr << "Gpio::getPinState: failed to allocate line" << gpio << "\n";
+        return false;
+    }
+    return static_cast<bool>(fLineMap[gpio].get_value());
 }
 
-auto GPIO::hw_pwm_set_value(unsigned int gpio_pin, unsigned int freq, std::uint32_t value) -> bool {
-	int res = ::hardware_PWM(fHandle, gpio_pin, freq, value);
-	return (res == 0);
+auto Gpio::set_gpio_direction(unsigned int gpio_pin, direction_t direction) -> bool
+{
+    if (direction == Direction::DIRECTION_OUTPUT) return setPinOutput(gpio_pin, 0);
+    else return setPinInput(gpio_pin);
 }
 
-auto GPIO::set_gpio_direction(unsigned int gpio_pin, bool output) -> bool {
-	int res = ::set_mode(fHandle, gpio_pin, (output) ? PI_OUTPUT : PI_INPUT );
-	return (res == 0);
+auto Gpio::set_gpio_state(unsigned int gpio_pin, bool state) -> bool
+{
+    return setPinState(gpio_pin, state);
 }
 
-auto GPIO::set_gpio_state(unsigned int gpio_pin, bool state) -> bool {
-	int res = ::gpio_write(fHandle, gpio_pin, (state) ? 1U : 0U );
-	return (res == 0);
+auto Gpio::get_gpio_state(unsigned int gpio_pin) -> bool
+{
+    return getPinState(gpio_pin);
 }
 
-auto GPIO::get_gpio_state(unsigned int gpio_pin, bool* err) -> bool {
-	int res = ::gpio_read(fHandle, gpio_pin);
-	if (err != nullptr) *err = (res < 0);
-	return (res > 0);
+auto Gpio::set_gpio_pullup(unsigned int gpio_pin, bool pullup_enable) -> bool 
+{
+    if (pullup_enable) return setPinBias(gpio_pin, PinBias::FLAG_BIAS_PULL_UP);
+    else return setPinBias(gpio_pin, PinBias::FLAG_BIAS_DISABLE);
 }
 
-auto GPIO::set_gpio_pullup(unsigned int gpio_pin, bool pullup_enable) -> bool {
-	int res = ::set_pull_up_down(fHandle, gpio_pin, (pullup_enable) ? PI_PUD_UP : PI_PUD_OFF);
-	return (res == 0);
+auto Gpio::set_gpio_pulldown(unsigned int gpio_pin, bool pulldown_enable) -> bool
+{
+    if (pulldown_enable) return setPinBias(gpio_pin, PinBias::FLAG_BIAS_PULL_DOWN);
+    else return setPinBias(gpio_pin, PinBias::FLAG_BIAS_DISABLE);
 }
 
-auto GPIO::set_gpio_pulldown(unsigned int gpio_pin, bool pulldown_enable) -> bool {
-	int res = ::set_pull_up_down(fHandle, gpio_pin, (pulldown_enable) ? PI_PUD_DOWN : PI_PUD_OFF);
-	return (res == 0);
+void Gpio::reloadInterruptSettings()
+{
+    this->stop();
+    this->start();
 }
 
-//} // namespace PiRaTe
+bool Gpio::registerInterrupt(unsigned int gpio, int edge, std::bitset<32> bias_flags)
+{
+    if (!is_initialised())
+        return false;
+    auto it = fInterruptLineMap.find(gpio);
+    if (it != fInterruptLineMap.end()) {
+        // line object exists
+        // The following code block shall release the previous line request
+        // and re-request this line for events.
+        // It is bypassed, since it does not work as intended.
+        // The function simply does nothing in this case.
+//         return false;
+        it->second.release();
+        it->second.update();
+        it->second.request( { 
+            DEFAULT_GPIO_CONSUMER,
+            edge,
+            bias_flags
+        });
+        reloadInterruptSettings();
+        return true;
+    }
+    // line was not allocated yet, so do it now
+    gpiod::line line = fChip.get_line(gpio);
+    // see if this line is already in use
+    if (line.is_used()) {
+        std::cerr << "Gpio::registerInterrupt: line " << gpio << " already in use\n";
+        return false;
+    }
+
+    // request the line
+    line.request( { 
+        DEFAULT_GPIO_CONSUMER,
+        edge,
+        bias_flags
+    });
+    fInterruptLineMap.emplace(std::make_pair(gpio, std::move(line)));
+    
+    reloadInterruptSettings();
+    return true;
+}
+
+bool Gpio::unRegisterInterrupt(unsigned int gpio)
+{
+    if (!is_initialised())
+        return false;
+    auto it = fInterruptLineMap.find(gpio);
+    if (it != fInterruptLineMap.end()) {
+        it->second.release();
+        fInterruptLineMap.erase(it);
+        reloadInterruptSettings();
+        return true;
+    }
+    return false;
+}
+
+bool Gpio::is_initialised()
+{
+    return (fChip.operator bool());
+}
+
+void Gpio::stop()
+{
+    fThreadRunning = false;
+    for (auto& [gpio, line_thread] : fThreads) {
+        if (line_thread)
+            line_thread->join();
+    }
+}
+
+void Gpio::start()
+{
+    if (fThreadRunning)
+        return;
+    fThreadRunning = true;
+
+    for (auto& [gpio, line] : fInterruptLineMap) {
+        fThreads[gpio] = std::make_unique<std::thread>([this, gpio, line]() { this->eventHandler(line); });
+    }
+}
+
+} // namespace PiRaTe

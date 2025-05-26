@@ -1,11 +1,14 @@
 #!/bin/bash
 # make transit scan at given horizontal coordinate
-# 01.09.2021 HGZ
+# 19/05/2025 HGZ/antrares
 
-# integration time for measurements
-INT_TIME=1
-# Timeout for waiting until RT reached set position in seconds
+# TIMEOUT: timeout for waiting until RT reached set position in seconds
 TIMEOUT=300
+# INT_TIME: integration time and waiting time BEFORE each measurement in s
+INT_TIME=1
+# CAL_INTERVAL: nr. of cycles which have to be passed until a calibration is made, 
+#               -1 disables calibration, 0 sets continous calibration 
+CAL_INTERVAL=-1
 
 cmd_stop='indi_setprop "Pi Radiotelescope.TELESCOPE_ABORT_MOTION.ABORT=On"'
 
@@ -28,33 +31,27 @@ goto_pos()
 		_az=$(echo "scale=6; $1-360.0" | bc)
 	fi
 
-	tout="$TIMEOUT"
-	if [ "$3" ] # Is parameter #3 !zero length?
-	then
-		tout="$3"
-	fi
-
 	# goto position
 	echo -n $(indi_setprop "Pi Radiotelescope.HORIZONTAL_EOD_COORD.AZ;ALT=$_az;$_alt")
 	sleep 1
-	indi_eval -w -t $tout '"Pi Radiotelescope.SCOPE_STATUS.SCOPE_IDLE"==1'
+	indi_eval -w -t $TIMEOUT '"Pi Radiotelescope.SCOPE_STATUS.SCOPE_IDLE"==1'
 }
 
 # write one line of explanatory header to the file supplied by the first argument
 write_file_header()
 {
-	echo "# time az alt ra dec adc1 adc2 temp1 temp2" >> $1
+	echo "#  date      time      az      alt      ra     dec  adc_main adc_aux temp1 temp2 cal" >> $1
 }
-
 
 if [ $# -lt 3 ]; then
   echo "Go to horizontal coordinate and take measurement in a loop (transit scan)"
   echo "need at least 3 arguments (horizontal coordinate and filename) for measurement"
-  echo "usage: $0 <az> <az> <file> [<int_time>]"
+  echo "usage: rt_transitscan <az> <alt> <file> [<int_time>] [<cal_interval>]"
   echo " arguments:"
-  echo "  az, alt - coordinate in horizontal system"
-  echo "  file - output file name"
-  echo "  int_time - (optional) integration time of the measurements in seconds (default 1)"
+  echo "  az, alt   - coordinate in horizontal system"
+  echo "  file      - output file name"
+  echo "  int_time  - (optional) integration time of the measurements in seconds (default: 1)"
+  echo "  cal_interval - (optional) number of datapoints after which a rcalibration is performed (default: -1 -> no calibration)"
   exit 1
 fi
 
@@ -70,8 +67,13 @@ if [[ $(echo "scale=6; $2 > 90.0"|bc) -eq 1 ]]; then
   exit 3
 fi
 
-if [ $# -gt 3 ]; then
+if [ $# -eq 4 ]; then
   INT_TIME=$4
+fi
+
+if [ $# -eq 5 ]; then
+  INT_TIME=$4
+  CAL_INTERVAL=$5
 fi
 
 az=$1
@@ -85,14 +87,11 @@ echo "alt = " $alt
 # switch off tracking
 echo -n $(indi_setprop "Pi Radiotelescope.TELESCOPE_TRACK_STATE.TRACK_OFF=On")
 
-# set integration time
-echo -n $(indi_setprop -n "Pi Radiotelescope.INT_TIME.TIME=$INT_TIME")
-
 # goto measurement position
-goto_pos $az $alt $TIMEOUT
+goto_pos $az $alt
 
 # write first line with explanation of columns as comment to data file
 write_file_header $3
 
 # start data acquisition, stay in endless loop mode
-echo -n $(rt_ads1115_measurement 0 $INT_TIME >> $3)
+echo -n $(rt_ads1115_measurement 0 $INT_TIME $CAL_INTERVAL >> $3)
