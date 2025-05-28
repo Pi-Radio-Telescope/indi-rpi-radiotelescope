@@ -3,7 +3,7 @@
 ## Overview
 This is an all-in-one control system for an Az/Alt mount radio telescope originally written for the 3m radio antenna at the astronomical observatory in Radebeul/Dresden (Germany) but may be utilized for similar instruments. 
 The main features are:
-- Based on Raspberry Pi (tested for model 4) connecting via GPIOs to easy-to-acquire ubiquitous periphery modules for motor control, position sensing, GPS reception, I/O, ADCs etc. The emplyed components and connections are documented here: https://oshwlab.com/antrares/pirate-mainboard
+- Based on Raspberry Pi (tested for model 4) connecting via GPIOs to easy-to-acquire ubiquitous periphery modules for motor control, position sensing, GPS reception, I/O, ADCs etc. The employed components and connections are documented here: https://oshwlab.com/antrares/pirate-mainboard
 - Abstraction to the hardware is managed through a custom Instrument-Neutral-Device-Interface (INDI) driver, which allows access to the scope through the quasi-standard XML-message-based INDI protocol. INDI is utilized in many remote observatories.
 - An observation task manager (Radio Telescope Task Scheduler - RaTSche) which runs as daemon and manages tasks such as measurements, parking, maintenance etc. New tasks are added through a message queue interface e.g. through the included command-line-interface (CLI) client which allows easy integration into web-based interfaces.
 - A collection of bash scripts which allow for more complex measurement tasks, i.e. 2d scans in horizontal and equatorial coordinates, transit scans, tracking measurements. The scripts are installed through CMake in the system's binary location together with indi-pirt and ratsche and are invoked by the ratsche daemon when required.
@@ -50,6 +50,7 @@ gpio=17,27,22,16=op,dh
 dtoverlay=pwm-2chan,pin=12,func=4,pin2=13,func2=4
 
 ```
+Note, that the choice of the CS pins for the two SPI interfaces was made such that no gpio pin on the 40-pin header is occupied. The CS signals are not used for the read-out of the positional encoders and are therefore rerouted to the internal gpio lines (46,47 and 48) which will most certainly never be used by any application.
 
 ## Activate and Start PiRaTe
 Now activate the driver and ratsche via systemd services:
